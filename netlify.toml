@@ -1,7 +1,19 @@
 [build]
-  command = "ng build --configuration production"
-  publish = "dist/wms-chat-ui/browser"
+  command   = "ng build --configuration production"
+  publish   = "dist/wms-chat-ui/browser"
 
+# ── Security Headers ─────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options              = "DENY"
+    X-Content-Type-Options       = "nosniff"
+    Referrer-Policy              = "strict-origin-when-cross-origin"
+    Permissions-Policy           = "geolocation=(), microphone=(self)"
+    Cross-Origin-Opener-Policy   = "same-origin"
+    Cross-Origin-Embedder-Policy = "require-corp"
+
+# ── JS/CSS Cache ──────────────────────────────────────────────
 [[headers]]
   for = "/*.js"
   [headers.values]
@@ -15,9 +27,10 @@
 [[headers]]
   for = "/index.html"
   [headers.values]
-    Cache-Control = "no-cache"
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
+# ── Angular SPA Routing ───────────────────────────────────────
 [[redirects]]
-  from = "/*"
-  to   = "/index.html"
+  from   = "/*"
+  to     = "/index.html"
   status = 200
