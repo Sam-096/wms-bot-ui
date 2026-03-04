@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export type Language = 'te' | 'hi' | 'en' | 'ta' | 'kn' | 'mr';
@@ -31,7 +31,6 @@ export class BotService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/api/bot`;
 
-  // ── Called by ChatWidgetComponent ──────────────────────────
   sendMessage(
     message: string,
     language: Language,
@@ -40,23 +39,37 @@ export class BotService {
     currentScreen?: string,
     contextData?: string,
   ): Observable<string> {
-    const payload: BotRequestPayload = {
-      message,
-      language,
-      role,
-      warehouseName,
-      currentScreen,
-      contextData,
-    };
-    return this.chat(payload);
+    return this.http
+      .post(
+        `${this.apiUrl}/chat`,
+        { message, language, role, warehouseName, currentScreen, contextData },
+        { responseType: 'text' },
+      )
+      .pipe(
+        map((raw: string) =>
+          raw
+            .split('\n')
+            .filter((line) => line.startsWith('data:'))
+            .map((line) => line.substring(5).trim())
+            .filter((token) => token.length > 0 && token !== '[DONE]')
+            .join(''),
+        ),
+      );
   }
 
-  // ── Core HTTP call ─────────────────────────────────────────
   chat(payload: BotRequestPayload): Observable<string> {
-    return this.http.post(`${this.apiUrl}/chat`, payload, { responseType: 'text' });
+    return this.http.post(`${this.apiUrl}/chat`, payload, { responseType: 'text' }).pipe(
+      map((raw: string) =>
+        raw
+          .split('\n')
+          .filter((line) => line.startsWith('data:'))
+          .map((line) => line.substring(5).trim())
+          .filter((token) => token.length > 0 && token !== '[DONE]')
+          .join(''),
+      ),
+    );
   }
 
-  // ── Parse action blocks from bot response ──────────────────
   parseResponse(raw: string): ParsedBotResponse {
     const actionRegex = /```action\s*([\s\S]*?)```/g;
     const actions: QuickAction[] = [];
@@ -68,7 +81,7 @@ export class BotService {
         if (parsed.actions) actions.push(...parsed.actions);
         text = text.replace(match[0], '').trim();
       } catch {
-        /* skip malformed */
+        /* skip */
       }
     }
     return { text, actions };
