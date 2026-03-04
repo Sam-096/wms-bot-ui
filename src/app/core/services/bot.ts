@@ -1,72 +1,51 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment.development';
-import { BotRequest, } from '../models/bot-request.model';
-import { Language, UserRole } from '../models/chat-message.model';
+import { environment } from '../../../environments/environment';
+
+export interface BotRequestPayload {
+  message: string;
+  language: string;
+  role: string;
+  warehouseName: string;
+  currentScreen?: string;
+  contextData?: string;
+}
+
+export interface QuickAction {
+  label: string;
+  route: string;
+  icon: string;
+}
+
+export interface ParsedBotResponse {
+  text: string;
+  actions: QuickAction[];
+}
 
 @Injectable({ providedIn: 'root' })
 export class BotService {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = `${environment.apiUrl}/api/bot`; // ← uses env
 
-  private readonly apiUrl = `${environment.apiBaseUrl}/api/bot/chat`;
-
-  // Security: random UUID per session — never user-controlled
-  readonly sessionId = crypto.randomUUID();
-
-  sendMessage(
-    message:       string,
-    language:      Language,
-    role:          UserRole,
-    warehouseName: string
-  ): Observable<string> {
-
-    // Security: sanitize before sending to backend
-    const body: BotRequest = {
-      message:      this.sanitize(message),
-      language,
-      role,
-      sessionId:    this.sessionId,
-      warehouseName
-    };
-
-    return new Observable(observer => {
-      fetch(this.apiUrl, {
-        method:      'POST',
-        headers:     { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body:        JSON.stringify(body)
-      })
-      .then(async response => {
-        if (!response.ok) {
-          observer.error(`Error: ${response.status}`);
-          return;
-        }
-        const reader  = response.body!.getReader();
-        const decoder = new TextDecoder();
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) { observer.complete(); break; }
-          const chunk = decoder.decode(value);
-          chunk.split('\n').forEach(line => {
-            if (line.startsWith('data:')) {
-              const token = line.replace('data:', '').trim();
-              if (token && token !== '[DONE]') {
-                observer.next(token);
-              }
-            }
-          });
-        }
-      })
-      .catch(err => observer.error(err));
-    });
+  chat(payload: BotRequestPayload): Observable<string> {
+    return this.http.post(`${this.apiUrl}/chat`, payload, { responseType: 'text' });
   }
 
-  // Security: strip HTML tags and JS to prevent XSS
-  private sanitize(input: string): string {
-    return input
-      .replace(/<[^>]*>/g, '')
-      .replace(/javascript:/gi, '')
-      .trim()
-      .substring(0, 500);
+  parseResponse(raw: string): ParsedBotResponse {
+    const actionRegex = /```action\s*([\s\S]*?)```/g;
+    const actions: QuickAction[] = [];
+    let text = raw;
+    let match;
+    while ((match = actionRegex.exec(raw)) !== null) {
+      try {
+        const parsed = JSON.parse(match[1]);
+        if (parsed.actions) actions.push(...parsed.actions);
+        text = text.replace(match[0], '').trim();
+      } catch {
+        /* skip malformed JSON */
+      }
+    }
+    return { text, actions };
   }
 }

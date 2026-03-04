@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'http://localhost:8080'
+  apiUrl: 'https://wms-bot-backend.onrender.com', // ← live Render URL
 };
