@@ -1,0 +1,324 @@
+<!-- FAB Button -->
+<button
+  class="fab"
+  (click)="toggleChat()"
+  [@fabAnimation]="fabState"
+  [matTooltip]="isOpen ? 'Close Assistant' : 'Godown AI Assistant'"
+  matTooltipPosition="left"
+>
+  <!-- <mat-icon>{{ isOpen ? 'close' : 'smart_toy' }}</mat-icon> -->
+  <svg
+    width="108px"
+    height="108px"
+    viewBox="-4.56 -4.56 33.12 33.12"
+    id="Artwork"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="#000000"
+    stroke="#000000"
+    stroke-width="0.00024000000000000003"
+  >
+    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+    <g
+      id="SVGRepo_tracerCarrier"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke="#CCCCCC"
+      stroke-width="0.048"
+    ></g>
+    <g id="SVGRepo_iconCarrier">
+      <path
+        d="M11.26,6.86l-3.39-2a.75.75,0,1,1,.78-1.28l3.36,2Z"
+        style="fill: #aecbfa; fill-rule: evenodd"
+      ></path>
+      <path
+        d="M11.52,10.31,4.69,6.36a.75.75,0,0,1,.75-1.3l6.08,3.52Z"
+        style="fill: #aecbfa; fill-rule: evenodd"
+      ></path>
+      <path
+        d="M19.6,5.33a.76.76,0,0,0-1-.27L12.75,8.4V6.85l3.39-2a.74.74,0,0,0,.25-1,.75.75,0,0,0-1-.25L11.65,5.78a.79.79,0,0,0-.39.68V21a.75.75,0,1,0,1.49,0V10.14l6.57-3.78A.76.76,0,0,0,19.6,5.33Z"
+        style="fill: #669df6; fill-rule: evenodd"
+      ></path>
+      <circle cx="12.01" cy="3.09" r="0.84" style="fill: #669df6"></circle>
+      <path
+        d="M9.48,10.82a.73.73,0,0,1,.38.64v4.08a.74.74,0,0,1-.38.65.79.79,0,0,1-.37.1.86.86,0,0,1-.38-.1L4.41,13.7a.75.75,0,1,1,.75-1.3l3.2,1.84V11.9l-1.45-.83a.75.75,0,0,1-.27-1,.74.74,0,0,1,1-.27Z"
+        style="fill: #aecbfa"
+      ></path>
+      <circle cx="5.26" cy="9.26" r="0.84" style="fill: #aecbfa"></circle>
+      <path
+        d="M16.34,9.77a.74.74,0,0,1,1,.27.75.75,0,0,1-.27,1l-1.45.83v2.34l3.2-1.84a.75.75,0,1,1,.75,1.3l-4.32,2.49a.86.86,0,0,1-.38.1.79.79,0,0,1-.37-.1.74.74,0,0,1-.38-.65V11.46a.73.73,0,0,1,.38-.64Z"
+        style="fill: #4285f4"
+      ></path>
+      <circle cx="18.74" cy="9.26" r="0.84" style="fill: #4285f4"></circle>
+    </g>
+  </svg>
+  @if (!isOpen) {
+    <span class="fab-ripple"></span>
+  }
+</button>
+
+<!-- Unread badge -->
+@if (!isOpen) {
+  <div class="fab-badge">AI</div>
+}
+
+<!-- Chat Panel -->
+@if (isOpen) {
+  <div class="chat-panel" [@panelAnimation]>
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="header-left">
+        <div class="bot-avatar">
+          <svg
+            width="108px"
+            height="108px"
+            viewBox="-4.56 -4.56 33.12 33.12"
+            id="Artwork"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="#000000"
+            stroke="#000000"
+            stroke-width="0.00024000000000000003"
+          >
+            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+            <g
+              id="SVGRepo_tracerCarrier"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke="#CCCCCC"
+              stroke-width="0.048"
+            ></g>
+            <g id="SVGRepo_iconCarrier">
+              <path
+                d="M11.26,6.86l-3.39-2a.75.75,0,1,1,.78-1.28l3.36,2Z"
+                style="fill: #aecbfa; fill-rule: evenodd"
+              ></path>
+              <path
+                d="M11.52,10.31,4.69,6.36a.75.75,0,0,1,.75-1.3l6.08,3.52Z"
+                style="fill: #aecbfa; fill-rule: evenodd"
+              ></path>
+              <path
+                d="M19.6,5.33a.76.76,0,0,0-1-.27L12.75,8.4V6.85l3.39-2a.74.74,0,0,0,.25-1,.75.75,0,0,0-1-.25L11.65,5.78a.79.79,0,0,0-.39.68V21a.75.75,0,1,0,1.49,0V10.14l6.57-3.78A.76.76,0,0,0,19.6,5.33Z"
+                style="fill: #669df6; fill-rule: evenodd"
+              ></path>
+              <circle cx="12.01" cy="3.09" r="0.84" style="fill: #669df6"></circle>
+              <path
+                d="M9.48,10.82a.73.73,0,0,1,.38.64v4.08a.74.74,0,0,1-.38.65.79.79,0,0,1-.37.1.86.86,0,0,1-.38-.1L4.41,13.7a.75.75,0,1,1,.75-1.3l3.2,1.84V11.9l-1.45-.83a.75.75,0,0,1-.27-1,.74.74,0,0,1,1-.27Z"
+                style="fill: #aecbfa"
+              ></path>
+              <circle cx="5.26" cy="9.26" r="0.84" style="fill: #aecbfa"></circle>
+              <path
+                d="M16.34,9.77a.74.74,0,0,1,1,.27.75.75,0,0,1-.27,1l-1.45.83v2.34l3.2-1.84a.75.75,0,1,1,.75,1.3l-4.32,2.49a.86.86,0,0,1-.38.1.79.79,0,0,1-.37-.1.74.74,0,0,1-.38-.65V11.46a.73.73,0,0,1,.38-.64Z"
+                style="fill: #4285f4"
+              ></path>
+              <circle cx="18.74" cy="9.26" r="0.84" style="fill: #4285f4"></circle>
+            </g>
+          </svg>
+          <span class="online-dot"></span>
+        </div>
+        <div class="bot-info">
+          <span class="bot-name">Godown AI</span>
+          <span class="bot-sub">Warehouse Assistant</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="select-group">
+          <mat-icon class="select-icon">language</mat-icon>
+          <select [(ngModel)]="language" (ngModelChange)="onLanguageChange()" class="pill-select">
+            @for (l of languages; track l.code) {
+              <option [value]="l.code">{{ l.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="select-group">
+          <mat-icon class="select-icon">badge</mat-icon>
+          <select [(ngModel)]="role" class="pill-select">
+            @for (r of roles; track r.code) {
+              <option [value]="r.code">{{ r.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages-container">
+      @if (messages.length === 0) {
+        <div class="empty-state">
+          <div class="empty-avatar">
+            <svg
+              width="108px"
+              height="108px"
+              viewBox="-4.56 -4.56 33.12 33.12"
+              id="Artwork"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="#000000"
+              stroke="#000000"
+              stroke-width="0.00024000000000000003"
+            >
+              <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+              <g
+                id="SVGRepo_tracerCarrier"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke="#CCCCCC"
+                stroke-width="0.048"
+              ></g>
+              <g id="SVGRepo_iconCarrier">
+                <path
+                  d="M11.26,6.86l-3.39-2a.75.75,0,1,1,.78-1.28l3.36,2Z"
+                  style="fill: #aecbfa; fill-rule: evenodd"
+                ></path>
+                <path
+                  d="M11.52,10.31,4.69,6.36a.75.75,0,0,1,.75-1.3l6.08,3.52Z"
+                  style="fill: #aecbfa; fill-rule: evenodd"
+                ></path>
+                <path
+                  d="M19.6,5.33a.76.76,0,0,0-1-.27L12.75,8.4V6.85l3.39-2a.74.74,0,0,0,.25-1,.75.75,0,0,0-1-.25L11.65,5.78a.79.79,0,0,0-.39.68V21a.75.75,0,1,0,1.49,0V10.14l6.57-3.78A.76.76,0,0,0,19.6,5.33Z"
+                  style="fill: #669df6; fill-rule: evenodd"
+                ></path>
+                <circle cx="12.01" cy="3.09" r="0.84" style="fill: #669df6"></circle>
+                <path
+                  d="M9.48,10.82a.73.73,0,0,1,.38.64v4.08a.74.74,0,0,1-.38.65.79.79,0,0,1-.37.1.86.86,0,0,1-.38-.1L4.41,13.7a.75.75,0,1,1,.75-1.3l3.2,1.84V11.9l-1.45-.83a.75.75,0,0,1-.27-1,.74.74,0,0,1,1-.27Z"
+                  style="fill: #aecbfa"
+                ></path>
+                <circle cx="5.26" cy="9.26" r="0.84" style="fill: #aecbfa"></circle>
+                <path
+                  d="M16.34,9.77a.74.74,0,0,1,1,.27.75.75,0,0,1-.27,1l-1.45.83v2.34l3.2-1.84a.75.75,0,1,1,.75,1.3l-4.32,2.49a.86.86,0,0,1-.38.1.79.79,0,0,1-.37-.1.74.74,0,0,1-.38-.65V11.46a.73.73,0,0,1,.38-.64Z"
+                  style="fill: #4285f4"
+                ></path>
+                <circle cx="18.74" cy="9.26" r="0.84" style="fill: #4285f4"></circle>
+              </g>
+            </svg>
+          </div>
+          <h4>{{ welcomeMessage }}</h4>
+          <p class="empty-hint">Try asking one of these:</p>
+          <div class="chip-row">
+            @for (s of currentSuggestions; track s) {
+              <button class="suggestion-chip" (click)="useSuggestion(s)">
+                {{ s }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @for (msg of messages; track trackByIndex($index)) {
+        <div class="msg-row msg-row--{{ msg.role }}" [@messageAnimation]>
+          @if (msg.role === 'bot') {
+            <div class="avatar bot-msg-avatar">
+              <svg
+                width="108px"
+                height="108px"
+                viewBox="-4.56 -4.56 33.12 33.12"
+                id="Artwork"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="#000000"
+                stroke="#000000"
+                stroke-width="0.00024000000000000003"
+              >
+                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                <g
+                  id="SVGRepo_tracerCarrier"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke="#CCCCCC"
+                  stroke-width="0.048"
+                ></g>
+                <g id="SVGRepo_iconCarrier">
+                  <path
+                    d="M11.26,6.86l-3.39-2a.75.75,0,1,1,.78-1.28l3.36,2Z"
+                    style="fill: #aecbfa; fill-rule: evenodd"
+                  ></path>
+                  <path
+                    d="M11.52,10.31,4.69,6.36a.75.75,0,0,1,.75-1.3l6.08,3.52Z"
+                    style="fill: #aecbfa; fill-rule: evenodd"
+                  ></path>
+                  <path
+                    d="M19.6,5.33a.76.76,0,0,0-1-.27L12.75,8.4V6.85l3.39-2a.74.74,0,0,0,.25-1,.75.75,0,0,0-1-.25L11.65,5.78a.79.79,0,0,0-.39.68V21a.75.75,0,1,0,1.49,0V10.14l6.57-3.78A.76.76,0,0,0,19.6,5.33Z"
+                    style="fill: #669df6; fill-rule: evenodd"
+                  ></path>
+                  <circle cx="12.01" cy="3.09" r="0.84" style="fill: #669df6"></circle>
+                  <path
+                    d="M9.48,10.82a.73.73,0,0,1,.38.64v4.08a.74.74,0,0,1-.38.65.79.79,0,0,1-.37.1.86.86,0,0,1-.38-.1L4.41,13.7a.75.75,0,1,1,.75-1.3l3.2,1.84V11.9l-1.45-.83a.75.75,0,0,1-.27-1,.74.74,0,0,1,1-.27Z"
+                    style="fill: #aecbfa"
+                  ></path>
+                  <circle cx="5.26" cy="9.26" r="0.84" style="fill: #aecbfa"></circle>
+                  <path
+                    d="M16.34,9.77a.74.74,0,0,1,1,.27.75.75,0,0,1-.27,1l-1.45.83v2.34l3.2-1.84a.75.75,0,1,1,.75,1.3l-4.32,2.49a.86.86,0,0,1-.38.1.79.79,0,0,1-.37-.1.74.74,0,0,1-.38-.65V11.46a.73.73,0,0,1,.38-.64Z"
+                    style="fill: #4285f4"
+                  ></path>
+                  <circle cx="18.74" cy="9.26" r="0.84" style="fill: #4285f4"></circle>
+                </g>
+              </svg>
+            </div>
+          }
+
+          <div class="bubble-wrap">
+            <div class="bubble bubble--{{ msg.role }}">
+              {{ msg.text }}
+              @if (msg.isLoading && !msg.text) {
+                <div class="dots"><span></span><span></span><span></span></div>
+              }
+              @if (msg.isLoading && msg.text) {
+                <span class="cursor">▋</span>
+              }
+            </div>
+            <span class="time-stamp">
+              {{ msg.timestamp | date: 'hh:mm a' }}
+            </span>
+          </div>
+
+          @if (msg.role === 'user') {
+            <div class="avatar user-msg-avatar">
+              <mat-icon>person</mat-icon>
+            </div>
+          }
+        </div>
+      }
+
+      <div #messagesEnd></div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-section">
+      <div class="input-box" [class.focused]="isFocused">
+        <input
+          #inputField
+          [(ngModel)]="inputText"
+          (keyup.enter)="send()"
+          (focus)="isFocused = true"
+          (blur)="isFocused = false"
+          [disabled]="isLoading"
+          placeholder="Ask anything about your warehouse..."
+          maxlength="500"
+          class="chat-input"
+        />
+        <div class="input-btns">
+          <button
+            class="icon-action"
+            (click)="toggleVoice()"
+            [class.recording]="isListening"
+            [matTooltip]="isListening ? 'Stop' : 'Voice input'"
+          >
+            <mat-icon>{{ isListening ? 'stop_circle' : 'mic' }}</mat-icon>
+          </button>
+          <button
+            class="send-action"
+            (click)="send()"
+            [disabled]="isLoading || !inputText.trim()"
+            matTooltip="Send"
+          >
+            @if (isLoading) {
+              <mat-icon class="spin">autorenew</mat-icon>
+            } @else {
+              <mat-icon>send</mat-icon>
+            }
+          </button>
+        </div>
+      </div>
+      <p class="powered-by">
+        <mat-icon style="font-size: 12px; width: 12px; height: 12px">bolt</mat-icon>
+        Powered by Sarvam AI · Supports 6 Indian Languages
+      </p>
+    </div>
+  </div>
+}
