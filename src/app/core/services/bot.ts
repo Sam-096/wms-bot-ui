@@ -3,10 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+export type Language = 'te' | 'hi' | 'en' | 'ta' | 'kn' | 'mr';
+export type UserRole = 'driver' | 'gatekeeper' | 'manager' | 'admin';
+
 export interface BotRequestPayload {
   message: string;
-  language: string;
-  role: string;
+  language: Language;
+  role: UserRole;
   warehouseName: string;
   currentScreen?: string;
   contextData?: string;
@@ -26,12 +29,34 @@ export interface ParsedBotResponse {
 @Injectable({ providedIn: 'root' })
 export class BotService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/api/bot`; // ← uses env
+  private readonly apiUrl = `${environment.apiUrl}/api/bot`;
 
+  // ── Called by ChatWidgetComponent ──────────────────────────
+  sendMessage(
+    message: string,
+    language: Language,
+    role: UserRole,
+    warehouseName: string,
+    currentScreen?: string,
+    contextData?: string,
+  ): Observable<string> {
+    const payload: BotRequestPayload = {
+      message,
+      language,
+      role,
+      warehouseName,
+      currentScreen,
+      contextData,
+    };
+    return this.chat(payload);
+  }
+
+  // ── Core HTTP call ─────────────────────────────────────────
   chat(payload: BotRequestPayload): Observable<string> {
     return this.http.post(`${this.apiUrl}/chat`, payload, { responseType: 'text' });
   }
 
+  // ── Parse action blocks from bot response ──────────────────
   parseResponse(raw: string): ParsedBotResponse {
     const actionRegex = /```action\s*([\s\S]*?)```/g;
     const actions: QuickAction[] = [];
@@ -43,7 +68,7 @@ export class BotService {
         if (parsed.actions) actions.push(...parsed.actions);
         text = text.replace(match[0], '').trim();
       } catch {
-        /* skip malformed JSON */
+        /* skip malformed */
       }
     }
     return { text, actions };
