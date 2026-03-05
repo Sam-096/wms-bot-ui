@@ -61,6 +61,7 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
 
   // ── UI state ──────────────────────────────────────────────
   isOpen       = false;
+  isMinimized  = false;
   isListening  = false;
   isLoading    = false;
   isFocused    = false;
@@ -224,11 +225,15 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
   // ── Helpers ───────────────────────────────────────────────
   toggleChat(): void {
     this.isOpen = !this.isOpen;
+    this.isMinimized = false;
     if (this.isOpen) {
       setTimeout(() =>
         this.inputField?.nativeElement.focus(), 300);
     }
   }
+
+  minimizeChat(): void { this.isMinimized = true; }
+  restoreChat():  void { this.isMinimized = false; }
 
   onLanguageChange(): void { this.messages = []; }
 

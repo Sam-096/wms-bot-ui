@@ -1,0 +1,1148 @@
+<!-- ══════════════════════════════════════════
+     Godown AI — Landing Page
+══════════════════════════════════════════ -->
+
+<!-- ── 1. NAVBAR ──────────────────────────── -->
+<nav
+  class="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-4 lg:px-8 h-16 transition-all duration-300"
+  [class.nav-scrolled]="navScrolled()"
+  role="navigation"
+  aria-label="Main navigation"
+>
+  <!-- Logo -->
+  <a routerLink="/" class="flex items-center gap-2 shrink-0" aria-label="Godown AI Home">
+    <span class="text-2xl select-none" aria-hidden="true">🏭</span>
+    <span class="font-bold text-base-content text-lg leading-none">Godown AI</span>
+    <span class="badge badge-primary badge-sm font-bold">WMS</span>
+  </a>
+
+  <!-- Center nav (desktop) -->
+  <ul class="hidden lg:flex items-center gap-6" role="list">
+    <a href="#features" class="...">Features</a>
+    <li>
+      <a
+        href="#ai-assistant"
+        class="text-sm text-base-content/70 hover:text-base-content transition-colors"
+        >AI Assistant</a
+      >
+    </li>
+    <li>
+      <a
+        href="#pricing"
+        class="text-sm text-base-content/70 hover:text-base-content transition-colors"
+        >Pricing</a
+      >
+    </li>
+    <li>
+      <a
+        href="#footer"
+        class="text-sm text-base-content/70 hover:text-base-content transition-colors"
+        >Docs</a
+      >
+    </li>
+  </ul>
+
+  <!-- Right cluster -->
+  <div class="flex items-center gap-2">
+    <!-- Theme toggle -->
+    <button
+      class="btn btn-ghost btn-circle btn-sm"
+      (click)="theme.toggle()"
+      [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+    >
+      <span class="theme-icon">
+        @if (theme.isDark()) {
+          <svg
+            class="w-[18px] h-[18px]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.75"
+              d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
+            />
+          </svg>
+        } @else {
+          <svg
+            class="w-[18px] h-[18px]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.75"
+              d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
+            />
+          </svg>
+        }
+      </span>
+    </button>
+
+    <button class="btn btn-primary btn-sm hidden sm:flex" (click)="goToDashboard()">
+      Get Started
+    </button>
+
+    <!-- Mobile menu toggle -->
+    <button
+      class="btn btn-ghost btn-circle btn-sm lg:hidden"
+      (click)="mobileMenuOpen.set(!mobileMenuOpen())"
+      aria-label="Toggle menu"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"
+        />
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile menu -->
+@if (mobileMenuOpen()) {
+  <div
+    class="fixed top-16 inset-x-0 z-40 bg-base-200 border-b border-base-300 px-4 py-4 flex flex-col gap-3 lg:hidden"
+  >
+    <a href="#features" class="text-sm text-base-content py-1" (click)="mobileMenuOpen.set(false)"
+      >Features</a
+    >
+    <a
+      href="#ai-assistant"
+      class="text-sm text-base-content py-1"
+      (click)="mobileMenuOpen.set(false)"
+      >AI Assistant</a
+    >
+    <a href="#pricing" class="text-sm text-base-content py-1" (click)="mobileMenuOpen.set(false)"
+      >Pricing</a
+    >
+    <button class="btn btn-primary btn-sm mt-1" (click)="goToDashboard()">Get Started</button>
+  </div>
+}
+
+<!-- ── 2. HERO ────────────────────────────── -->
+<section class="relative min-h-dvh flex items-center pt-16 overflow-hidden bg-base-100">
+  <!-- Background blobs -->
+  <div class="blob blob-primary absolute -top-24 -left-24 w-96 h-96" aria-hidden="true"></div>
+  <div class="blob blob-secondary absolute -bottom-32 -right-32 w-80 h-80" aria-hidden="true"></div>
+
+  <div
+    class="relative z-10 w-full max-w-7xl mx-auto px-4 lg:px-8 py-16 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+  >
+    <!-- LEFT: Copy -->
+    <div class="flex flex-col gap-6">
+      <!-- Eyebrow badge -->
+      <div class="flex items-center gap-2">
+        <span class="badge badge-outline badge-primary gap-1.5 px-3 py-2 text-sm">
+          <span class="relative flex h-2 w-2" aria-hidden="true">
+            <span
+              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
+            ></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+          </span>
+          🤖 AI-Powered · 2026
+        </span>
+      </div>
+
+      <!-- H1 -->
+      <h1
+        class="text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight text-base-content"
+      >
+        <span class="hero-word block">The Warehouse</span>
+        <span class="hero-word block">That <span class="gradient-text">Thinks</span></span>
+        <span class="hero-word block">For You.</span>
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="text-base lg:text-lg text-base-content/60 max-w-lg leading-relaxed">
+        Godown AI automates inward/outward tracking, gate passes, inventory, bonds — with a
+        multilingual AI assistant that speaks Telugu, Hindi, English &amp; Tamil.
+      </p>
+
+      <!-- CTAs -->
+      <div class="flex flex-wrap gap-3">
+        <button
+          class="btn btn-primary btn-lg gap-2"
+          (click)="goToDashboard()"
+          aria-label="Experience AI Demo"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 7l5 5m0 0l-5 5m5-5H6"
+            />
+          </svg>
+          Experience AI Demo
+        </button>
+        <button
+          class="btn btn-ghost btn-lg gap-2 border border-base-300"
+          (click)="goToDashboard()"
+          aria-label="View Admin Panel"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
+            />
+          </svg>
+          View Admin Panel
+        </button>
+      </div>
+
+      <!-- Trust line -->
+      <p class="text-sm text-base-content/40 flex items-center gap-2">
+        <svg
+          class="w-4 h-4 text-success shrink-0"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        Trusted by 50+ warehouses across Andhra Pradesh &amp; Telangana
+      </p>
+    </div>
+
+    <!-- RIGHT: Dashboard Mockup -->
+    <div class="relative flex justify-center lg:justify-end">
+      <!-- Glow ring -->
+      <div class="dashboard-glow absolute inset-0 rounded-2xl" aria-hidden="true"></div>
+
+      <!-- Main mockup card -->
+      <div
+        class="card bg-base-200 border border-base-300 shadow-2xl p-4 w-full max-w-sm float-card hero-card relative z-10"
+      >
+        <!-- Mockup header -->
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-base-300">
+          <div class="flex items-center gap-2">
+            <span class="text-sm" aria-hidden="true">🏭</span>
+            <span class="text-xs font-semibold text-base-content">Godown AI Dashboard</span>
+          </div>
+          <span class="badge badge-xs badge-success gap-1">
+            <span
+              class="w-1.5 h-1.5 rounded-full bg-success inline-block animate-pulse"
+              aria-hidden="true"
+            ></span>
+            Live
+          </span>
+        </div>
+
+        <!-- Mini stats -->
+        <div class="grid grid-cols-4 gap-1.5 mb-3">
+          <div class="bg-base-300 rounded-lg p-2 text-center">
+            <p class="text-[10px] text-base-content/50 leading-none mb-0.5">Inward</p>
+            <p class="font-bold text-primary text-base leading-none">248</p>
+          </div>
+          <div class="bg-base-300 rounded-lg p-2 text-center">
+            <p class="text-[10px] text-base-content/50 leading-none mb-0.5">Outward</p>
+            <p class="font-bold text-secondary text-base leading-none">187</p>
+          </div>
+          <div class="bg-base-300 rounded-lg p-2 text-center">
+            <p class="text-[10px] text-base-content/50 leading-none mb-0.5">Stock</p>
+            <p class="font-bold text-accent text-base leading-none">12K</p>
+          </div>
+          <div class="bg-base-300 rounded-lg p-2 text-center">
+            <p class="text-[10px] text-base-content/50 leading-none mb-0.5">Alerts</p>
+            <p class="font-bold text-error text-base leading-none">7</p>
+          </div>
+        </div>
+
+        <!-- Mini table -->
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2 bg-base-300/60 rounded px-2 py-1.5 text-[11px]">
+            <span class="font-mono text-primary font-semibold w-14">INW-042</span>
+            <span class="text-base-content/60 flex-1">Rice · AP 001</span>
+            <span class="badge badge-xs badge-success">Done</span>
+          </div>
+          <div class="flex items-center gap-2 bg-base-300/60 rounded px-2 py-1.5 text-[11px]">
+            <span class="font-mono text-primary font-semibold w-14">INW-043</span>
+            <span class="text-base-content/60 flex-1">Wheat · TG 204</span>
+            <span class="badge badge-xs badge-warning">Pending</span>
+          </div>
+          <div class="flex items-center gap-2 bg-base-300/60 rounded px-2 py-1.5 text-[11px]">
+            <span class="font-mono text-primary font-semibold w-14">OUT-089</span>
+            <span class="text-base-content/60 flex-1">Maize · KA 112</span>
+            <span class="badge badge-xs badge-info">In Progress</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating overlay: approved -->
+      <div
+        class="card bg-base-100 border border-success/40 px-3 py-2 shadow-lg hero-card absolute -left-4 lg:-left-8 bottom-12 z-20 flex items-center gap-2 text-xs whitespace-nowrap"
+      >
+        <span aria-hidden="true">✅</span>
+        <span class="text-base-content font-medium">INW-042 Approved</span>
+        <span class="badge badge-xs badge-success">New</span>
+      </div>
+
+      <!-- Floating overlay: low stock -->
+      <div
+        class="card bg-base-100 border border-warning/40 px-3 py-2 shadow-lg hero-card absolute -right-4 lg:-right-6 top-6 z-20 flex items-center gap-2 text-xs whitespace-nowrap"
+      >
+        <span aria-hidden="true">⚠️</span>
+        <span class="text-base-content font-medium">Low Stock: Wheat</span>
+        <span class="badge badge-xs badge-warning">Alert</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 3. STATS BAR ───────────────────────── -->
+<div class="stats-bar bg-base-200 border-y border-base-300 py-10">
+  <div class="max-w-5xl mx-auto px-4 grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+    <div class="flex flex-col items-center gap-1 relative">
+      <span class="stat-bags text-3xl font-extrabold text-primary tabular-nums">0+</span>
+      <span class="text-sm text-base-content/60">Bags Tracked Daily</span>
+    </div>
+    <div class="lg:border-l border-base-300 flex flex-col items-center gap-1">
+      <span class="stat-uptime text-3xl font-extrabold text-success tabular-nums">0%</span>
+      <span class="text-sm text-base-content/60">Uptime SLA</span>
+    </div>
+    <div class="lg:border-l border-base-300 flex flex-col items-center gap-1">
+      <span class="stat-response text-3xl font-extrabold text-accent tabular-nums">0 sec</span>
+      <span class="text-sm text-base-content/60">Avg AI Response Time</span>
+    </div>
+    <div class="lg:border-l border-base-300 flex flex-col items-center gap-1">
+      <span class="stat-langs text-3xl font-extrabold text-secondary tabular-nums">0</span>
+      <span class="text-sm text-base-content/60">Telugu · Hindi · English · Tamil</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── 4. FEATURES GRID ───────────────────── -->
+<section id="features" class="py-20 bg-base-100">
+  <div class="max-w-6xl mx-auto px-4 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl lg:text-4xl font-bold text-base-content mb-3">
+        Everything your godown needs
+      </h2>
+      <p class="text-base-content/60 max-w-xl mx-auto">
+        Built for the ground reality of Indian warehouses
+      </p>
+    </div>
+
+    <div class="features-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div
+        class="feature-card card bg-base-200 border border-base-300 hover:border-primary/50 transition-all hover:-translate-y-1 cursor-default p-6"
+      >
+        <div class="text-3xl mb-3" aria-hidden="true">📥</div>
+        <h3 class="font-semibold text-base-content mb-2">Smart Inward</h3>
+        <p class="text-sm text-base-content/60 leading-relaxed">
+          Scan, weigh, classify. AI detects commodity from vehicle number history.
+        </p>
+      </div>
+      <div
+        class="feature-card card bg-base-200 border border-base-300 hover:border-primary/50 transition-all hover:-translate-y-1 cursor-default p-6"
+      >
+        <div class="text-3xl mb-3" aria-hidden="true">📤</div>
+        <h3 class="font-semibold text-base-content mb-2">Outward Dispatch</h3>
+        <p class="text-sm text-base-content/60 leading-relaxed">
+          Gate pass auto-generated. Driver notified in their language instantly.
+        </p>
+      </div>
+      <div
+        class="feature-card card bg-base-200 border border-base-300 hover:border-primary/50 transition-all hover:-translate-y-1 cursor-default p-6"
+      >
+        <div class="text-3xl mb-3" aria-hidden="true">🤖</div>
+        <h3 class="font-semibold text-base-content mb-2">AI Assistant</h3>
+        <p class="text-sm text-base-content/60 leading-relaxed">
+          Ask in Telugu, Hindi or English — get stock reports, alerts, summaries.
+        </p>
+      </div>
+      <div
+        class="feature-card card bg-base-200 border border-base-300 hover:border-primary/50 transition-all hover:-translate-y-1 cursor-default p-6"
+      >
+        <div class="text-3xl mb-3" aria-hidden="true">📊</div>
+        <h3 class="font-semibold text-base-content mb-2">Live Inventory</h3>
+        <p class="text-sm text-base-content/60 leading-relaxed">
+          Bay-level tracking. Know exactly where every bag is at all times.
+        </p>
+      </div>
+      <div
+        class="feature-card card bg-base-200 border border-base-300 hover:border-primary/50 transition-all hover:-translate-y-1 cursor-default p-6"
+      >
+        <div class="text-3xl mb-3" aria-hidden="true">📜</div>
+        <h3 class="font-semibold text-base-content mb-2">Bonds Management</h3>
+        <p class="text-sm text-base-content/60 leading-relaxed">
+          Track bonded stock with expiry alerts. One-click release with audit trail.
+        </p>
+      </div>
+      <div
+        class="feature-card card bg-base-200 border border-base-300 hover:border-primary/50 transition-all hover:-translate-y-1 cursor-default p-6"
+      >
+        <div class="text-3xl mb-3" aria-hidden="true">📋</div>
+        <h3 class="font-semibold text-base-content mb-2">Smart Reports</h3>
+        <p class="text-sm text-base-content/60 leading-relaxed">
+          Daily summaries, inward registers, stock positions — exportable to PDF/Excel.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 5. AI ASSISTANT SPOTLIGHT ──────────── -->
+<section id="ai-assistant" class="py-20 bg-base-200">
+  <div class="max-w-6xl mx-auto px-4 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <!-- LEFT: Copy -->
+    <div class="flex flex-col gap-5">
+      <span class="badge badge-outline badge-secondary w-fit px-3 py-2 text-sm"
+        >🧠 Powered by Local LLM</span
+      >
+      <h2 class="text-3xl lg:text-4xl font-bold text-base-content leading-tight">
+        Your warehouse manager<br />that never sleeps
+      </h2>
+      <ul class="flex flex-col gap-3" role="list">
+        <li class="flex items-start gap-3 text-sm text-base-content/70">
+          <svg
+            class="w-5 h-5 text-success shrink-0 mt-0.5"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Ask "wheat stock ఎంత ఉంది?" — answers instantly in Telugu
+        </li>
+        <li class="flex items-start gap-3 text-sm text-base-content/70">
+          <svg
+            class="w-5 h-5 text-success shrink-0 mt-0.5"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Instant alerts for low stock, overstay vehicles, expiring bonds
+        </li>
+        <li class="flex items-start gap-3 text-sm text-base-content/70">
+          <svg
+            class="w-5 h-5 text-success shrink-0 mt-0.5"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Runs on your local server — your data never leaves your premises
+        </li>
+      </ul>
+      <button class="btn btn-primary w-fit gap-2" (click)="goToDashboard()">
+        Try AI Demo
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 7l5 5m0 0l-5 5m5-5H6"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <!-- RIGHT: Chat mockup -->
+    <div
+      class="card bg-base-100 border border-base-300 shadow-xl overflow-hidden max-w-sm mx-auto w-full"
+      role="img"
+      aria-label="AI chat demo"
+    >
+      <!-- Chat header -->
+      <div class="flex items-center gap-2.5 px-4 py-3 border-b border-base-300 bg-base-200">
+        <div class="ai-avatar-demo w-8 h-8 rounded-full flex items-center justify-center">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="white"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75z"
+            />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12h10.5" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-base-content leading-none">Godown AI</p>
+          <p class="text-[10px] text-success mt-0.5">● Online</p>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="flex flex-col gap-3 p-4 bg-base-100">
+        <!-- User msg -->
+        <div class="flex justify-end">
+          <div
+            class="bg-primary text-primary-content px-3 py-2 rounded-2xl rounded-br-sm text-xs max-w-[75%]"
+          >
+            Today's pending inward?
+          </div>
+        </div>
+        <!-- AI response -->
+        <div class="flex gap-2 items-end">
+          <div
+            class="ai-avatar-demo w-6 h-6 rounded-full shrink-0 flex items-center justify-center"
+          >
+            <svg
+              class="w-3 h-3"
+              fill="none"
+              stroke="white"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75z"
+              />
+            </svg>
+          </div>
+          <div
+            class="bg-base-200 px-3 py-2 rounded-2xl rounded-bl-sm text-xs max-w-[80%] space-y-1.5"
+          >
+            <p class="text-base-content">2 entries pending:</p>
+            <div class="bg-base-100 border border-base-300 rounded-lg p-2 space-y-1">
+              <div class="flex justify-between items-center">
+                <span class="font-mono text-primary font-semibold text-[10px]">INW-042</span>
+                <span class="badge badge-xs badge-warning">Pending</span>
+              </div>
+              <p class="text-[10px] text-base-content/60">Rice · AP 001 · 120 bags</p>
+              <div class="flex justify-between items-center mt-1">
+                <span class="font-mono text-primary font-semibold text-[10px]">INW-043</span>
+                <span class="badge badge-xs badge-warning">Pending</span>
+              </div>
+              <p class="text-[10px] text-base-content/60">Wheat · TG 204 · 85 bags</p>
+            </div>
+          </div>
+        </div>
+        <!-- User msg Telugu -->
+        <div class="flex justify-end">
+          <div
+            class="bg-primary text-primary-content px-3 py-2 rounded-2xl rounded-br-sm text-xs max-w-[75%]"
+          >
+            గోదాం లో wheat ఎంత ఉంది?
+          </div>
+        </div>
+        <!-- AI response -->
+        <div class="flex gap-2 items-end">
+          <div
+            class="ai-avatar-demo w-6 h-6 rounded-full shrink-0 flex items-center justify-center"
+          >
+            <svg
+              class="w-3 h-3"
+              fill="none"
+              stroke="white"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75z"
+              />
+            </svg>
+          </div>
+          <div class="bg-base-200 px-3 py-2 rounded-2xl rounded-bl-sm text-xs max-w-[80%]">
+            <span class="text-base-content">Wheat stock: </span>
+            <span class="text-primary font-semibold">4,200 bags</span>
+            <span class="text-base-content"> · 210 tons </span>
+            <span class="text-success">✅</span>
+          </div>
+        </div>
+        <!-- Typing indicator -->
+        <div class="flex gap-2 items-end">
+          <div
+            class="ai-avatar-demo w-6 h-6 rounded-full shrink-0 flex items-center justify-center"
+          >
+            <svg
+              class="w-3 h-3"
+              fill="none"
+              stroke="white"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75z"
+              />
+            </svg>
+          </div>
+          <div class="bg-base-200 px-4 py-3 rounded-2xl rounded-bl-sm flex gap-1.5 items-center">
+            <span class="demo-dot w-1.5 h-1.5 rounded-full bg-base-content/40 inline-block"></span>
+            <span
+              class="demo-dot w-1.5 h-1.5 rounded-full bg-base-content/40 inline-block"
+              style="animation-delay: 150ms"
+            ></span>
+            <span
+              class="demo-dot w-1.5 h-1.5 rounded-full bg-base-content/40 inline-block"
+              style="animation-delay: 300ms"
+            ></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 6. HOW IT WORKS ────────────────────── -->
+<section class="py-20 bg-base-100">
+  <div class="max-w-5xl mx-auto px-4 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl lg:text-4xl font-bold text-base-content mb-3">How it works</h2>
+      <p class="text-base-content/60">Three steps to a fully documented warehouse operation</p>
+    </div>
+    <div class="steps-row grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+      <!-- Dashed connector (desktop) -->
+      <div
+        class="hidden md:block absolute top-8 left-[calc(33%+1rem)] right-[calc(33%+1rem)] h-px border-t-2 border-dashed border-base-300"
+        aria-hidden="true"
+      ></div>
+
+      <div class="step-item flex flex-col items-center text-center gap-3">
+        <div
+          class="w-16 h-16 rounded-full bg-base-200 border-2 border-primary/30 flex items-center justify-center text-3xl shadow-md"
+          aria-hidden="true"
+        >
+          🚛
+        </div>
+        <span class="badge badge-outline badge-primary badge-sm">Step 1</span>
+        <h3 class="font-semibold text-base-content">Vehicle Arrives</h3>
+        <p class="text-sm text-base-content/60">
+          Driver enters gate. Security scans vehicle number.
+        </p>
+      </div>
+      <div class="step-item flex flex-col items-center text-center gap-3">
+        <div
+          class="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center text-3xl shadow-md"
+          aria-hidden="true"
+        >
+          <svg
+            class="w-7 h-7"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75zM6.75 12h10.5M9 15.75h.008M15 15.75h.008M6.75 19.5A2.25 2.25 0 009 21.75h6a2.25 2.25 0 002.25-2.25V12H6.75v7.5z"
+            />
+          </svg>
+        </div>
+        <span class="badge badge-primary badge-sm">Step 2</span>
+        <h3 class="font-semibold text-base-content">AI Processes</h3>
+        <p class="text-sm text-base-content/60">
+          Godown AI identifies commodity, checks history, suggests bay location.
+        </p>
+      </div>
+      <div class="step-item flex flex-col items-center text-center gap-3">
+        <div
+          class="w-16 h-16 rounded-full bg-base-200 border-2 border-success/30 flex items-center justify-center text-3xl shadow-md"
+          aria-hidden="true"
+        >
+          ✅
+        </div>
+        <span class="badge badge-outline badge-success badge-sm">Step 3</span>
+        <h3 class="font-semibold text-base-content">Auto-Documented</h3>
+        <p class="text-sm text-base-content/60">
+          Inward entry created, gate pass issued, inventory updated — all at once.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 7. INFINITY SCROLL ─────────────────── -->
+<section class="py-12 bg-base-200 overflow-hidden">
+  <div class="text-center mb-8 px-4">
+    <p class="text-sm text-base-content/50 uppercase tracking-widest font-semibold">
+      Warehouses across India trust Godown AI
+    </p>
+  </div>
+  <!-- Row 1 — scroll left -->
+  <div class="relative flex overflow-hidden mb-3" role="marquee" aria-label="Partner companies">
+    <div class="scroll-left flex gap-3 shrink-0">
+      <span class="trust-pill">Sri Balaji Agro</span
+      ><span class="trust-pill">Kurnool Cold Storage</span
+      ><span class="trust-pill">Vizag Logistics</span
+      ><span class="trust-pill">AP State Warehousing</span
+      ><span class="trust-pill">Hyderabad Grain Market</span
+      ><span class="trust-pill">RR Agritech</span><span class="trust-pill">Deccan Storage</span
+      ><span class="trust-pill">Krishna Valley Feeds</span
+      ><span class="trust-pill">Nellore Rice Mills</span
+      ><span class="trust-pill">Godavari Commodities</span>
+      <span class="trust-pill">Sri Balaji Agro</span
+      ><span class="trust-pill">Kurnool Cold Storage</span
+      ><span class="trust-pill">Vizag Logistics</span
+      ><span class="trust-pill">AP State Warehousing</span
+      ><span class="trust-pill">Hyderabad Grain Market</span
+      ><span class="trust-pill">RR Agritech</span><span class="trust-pill">Deccan Storage</span
+      ><span class="trust-pill">Krishna Valley Feeds</span
+      ><span class="trust-pill">Nellore Rice Mills</span
+      ><span class="trust-pill">Godavari Commodities</span>
+    </div>
+  </div>
+  <!-- Row 2 — scroll right -->
+  <div
+    class="relative flex overflow-hidden"
+    role="marquee"
+    aria-label="Partner companies continued"
+  >
+    <div class="scroll-right flex gap-3 shrink-0">
+      <span class="trust-pill">Telangana FCI Partner</span
+      ><span class="trust-pill">Karimnagar Agro Hub</span
+      ><span class="trust-pill">Warangal Traders</span
+      ><span class="trust-pill">Secunderabad Cold Chain</span
+      ><span class="trust-pill">Nizamabad Pulses</span
+      ><span class="trust-pill">Adilabad Grains</span
+      ><span class="trust-pill">Mahbubnagar Storage</span
+      ><span class="trust-pill">Khammam Rice Corp</span>
+      <span class="trust-pill">Telangana FCI Partner</span
+      ><span class="trust-pill">Karimnagar Agro Hub</span
+      ><span class="trust-pill">Warangal Traders</span
+      ><span class="trust-pill">Secunderabad Cold Chain</span
+      ><span class="trust-pill">Nizamabad Pulses</span
+      ><span class="trust-pill">Adilabad Grains</span
+      ><span class="trust-pill">Mahbubnagar Storage</span
+      ><span class="trust-pill">Khammam Rice Corp</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── 8. PRICING ─────────────────────────── -->
+<section id="pricing" class="py-20 bg-base-100">
+  <div class="max-w-6xl mx-auto px-4 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl lg:text-4xl font-bold text-base-content mb-3">
+        Simple, transparent pricing
+      </h2>
+      <p class="text-base-content/60">Start free, scale as you grow</p>
+    </div>
+
+    <div class="pricing-grid grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <!-- Starter -->
+      <div class="pricing-card card bg-base-200 border border-base-300 p-7 flex flex-col gap-4">
+        <div>
+          <span class="badge badge-ghost mb-2">Starter</span>
+          <div class="flex items-end gap-1 mt-1">
+            <span class="text-4xl font-extrabold text-base-content">₹2,999</span>
+            <span class="text-base-content/50 text-sm mb-1">/mo</span>
+          </div>
+          <p class="text-sm text-base-content/50 mt-1">For single godown</p>
+        </div>
+        <ul class="flex flex-col gap-2 text-sm flex-1" role="list">
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Up to 5 users
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Inward / Outward / Gate Pass
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Basic Reports
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Hindi + English AI
+          </li>
+          <li class="flex items-center gap-2 text-base-content/40">
+            <span class="text-base-content/30">✗</span> Bonds Management
+          </li>
+          <li class="flex items-center gap-2 text-base-content/40">
+            <span class="text-base-content/30">✗</span> API Access
+          </li>
+        </ul>
+        <button class="btn btn-outline w-full" (click)="goToDashboard()">Get Started</button>
+      </div>
+
+      <!-- Pro (featured) -->
+      <div
+        class="pricing-card card bg-base-200 border-2 border-primary p-7 flex flex-col gap-4 scale-105 shadow-2xl relative ring-2 ring-primary/20"
+      >
+        <div class="absolute -top-3.5 left-0 right-0 flex justify-center">
+          <span class="badge badge-primary px-4 py-1 text-xs font-bold">Most Popular</span>
+        </div>
+        <div>
+          <span class="badge badge-primary mb-2">Pro</span>
+          <div class="flex items-end gap-1 mt-1">
+            <span class="text-4xl font-extrabold text-base-content">₹7,999</span>
+            <span class="text-base-content/50 text-sm mb-1">/mo</span>
+          </div>
+          <p class="text-sm text-base-content/50 mt-1">For warehouse chains</p>
+        </div>
+        <ul class="flex flex-col gap-2 text-sm flex-1" role="list">
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Unlimited users
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> All modules
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Telugu + Tamil AI
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Bonds + Advanced Reports
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Priority support
+          </li>
+          <li class="flex items-center gap-2 text-base-content/40">
+            <span class="text-base-content/30">✗</span> White label
+          </li>
+        </ul>
+        <button class="btn btn-primary w-full" (click)="goToDashboard()">Start Free Trial</button>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="pricing-card card bg-base-200 border border-base-300 p-7 flex flex-col gap-4">
+        <div>
+          <span class="badge badge-secondary mb-2">Enterprise</span>
+          <div class="flex items-end gap-1 mt-1">
+            <span class="text-4xl font-extrabold text-base-content">Custom</span>
+          </div>
+          <p class="text-sm text-base-content/50 mt-1">For large operations</p>
+        </div>
+        <ul class="flex flex-col gap-2 text-sm flex-1" role="list">
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Everything in Pro
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> White label
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> On-premise deployment
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Custom AI training
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> SLA guarantee
+          </li>
+          <li class="flex items-center gap-2 text-base-content/70">
+            <span class="text-success">✓</span> Dedicated support
+          </li>
+        </ul>
+        <button class="btn btn-secondary w-full" (click)="goToDashboard()">Contact Sales</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 9. TESTIMONIALS ────────────────────── -->
+<section class="py-20 bg-base-200">
+  <div class="max-w-6xl mx-auto px-4 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold text-base-content mb-3">Trusted by warehouse managers</h2>
+      <p class="text-base-content/60">Real feedback from the field</p>
+    </div>
+    <div class="testimonials-grid grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="testimonial-card card bg-base-100 border border-base-300 p-6 flex flex-col gap-4">
+        <div class="flex gap-0.5 text-warning" aria-label="5 stars">★★★★★</div>
+        <p class="text-sm text-base-content/70 leading-relaxed italic flex-1">
+          "మా గోదాంలో stock track చేయడం చాలా easy అయింది. AI ఒక్కసారి setup చేస్తే manually ఏమీ
+          చేయాల్సిన అవసరం లేదు."
+        </p>
+        <div class="flex items-center gap-3">
+          <div
+            class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-content font-bold text-sm shrink-0"
+            aria-hidden="true"
+          >
+            RR
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-base-content leading-tight">Ramesh Reddy</p>
+            <p class="text-xs text-base-content/50">Warehouse Manager, Kurnool Agro Storage</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card card bg-base-100 border border-base-300 p-6 flex flex-col gap-4">
+        <div class="flex gap-0.5 text-warning" aria-label="5 stars">★★★★★</div>
+        <p class="text-sm text-base-content/70 leading-relaxed italic flex-1">
+          "Gate pass automation saved us 2 hours every day. The Telugu AI assistant is exactly what
+          our team needed."
+        </p>
+        <div class="flex items-center gap-3">
+          <div
+            class="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-secondary-content font-bold text-sm shrink-0"
+            aria-hidden="true"
+          >
+            SK
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-base-content leading-tight">Suresh Kumar</p>
+            <p class="text-xs text-base-content/50">Operations Head, Vizag Cold Chain</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card card bg-base-100 border border-base-300 p-6 flex flex-col gap-4">
+        <div class="flex gap-0.5 text-warning" aria-label="5 stars">★★★★★</div>
+        <p class="text-sm text-base-content/70 leading-relaxed italic flex-1">
+          "Bond expiry alerts alone justified the cost. We haven't missed a single renewal since we
+          started using Godown AI."
+        </p>
+        <div class="flex items-center gap-3">
+          <div
+            class="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-accent-content font-bold text-sm shrink-0"
+            aria-hidden="true"
+          >
+            PR
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-base-content leading-tight">Padma Rao</p>
+            <p class="text-xs text-base-content/50">Director, AP State Warehousing Corp</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 10. CTA BANNER ─────────────────────── -->
+<section class="cta-banner py-20 border-y border-primary/20">
+  <div class="max-w-3xl mx-auto px-4 text-center flex flex-col items-center gap-6">
+    <h2 class="text-3xl lg:text-4xl font-bold text-base-content">
+      Ready to transform your godown?
+    </h2>
+    <p class="text-base-content/60 text-lg">
+      Join 50+ warehouses already using AI-powered management
+    </p>
+    <div class="flex flex-wrap gap-3 justify-center">
+      <button class="btn btn-primary btn-lg gap-2" (click)="goToDashboard()">
+        Start Free Trial
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 7l5 5m0 0l-5 5m5-5H6"
+          />
+        </svg>
+      </button>
+      <button class="btn btn-ghost btn-lg border border-base-300" (click)="goToDashboard()">
+        Schedule Demo
+      </button>
+    </div>
+    <p class="text-sm text-base-content/40">
+      No credit card required · Setup in 30 minutes · Data stays on your server
+    </p>
+  </div>
+</section>
+
+<!-- ── 11. FOOTER ─────────────────────────── -->
+<footer id="footer" class="bg-base-200 border-t border-base-300 pt-12 pb-6">
+  <div class="max-w-6xl mx-auto px-4 lg:px-8">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+      <!-- Brand -->
+      <div class="col-span-2 lg:col-span-1 flex flex-col gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl" aria-hidden="true">🏭</span>
+          <span class="font-bold text-base-content">Godown AI</span>
+        </div>
+        <p class="text-sm text-base-content/50 leading-relaxed max-w-[180px]">
+          AI-powered warehouse management built for Indian businesses.
+        </p>
+        <div class="flex gap-2 mt-1">
+          <a href="#" class="btn btn-ghost btn-xs btn-circle" aria-label="GitHub">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              />
+            </svg>
+          </a>
+          <a href="#" class="btn btn-ghost btn-xs btn-circle" aria-label="Twitter / X">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+              />
+            </svg>
+          </a>
+          <a href="#" class="btn btn-ghost btn-xs btn-circle" aria-label="LinkedIn">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+              />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Product -->
+      <div>
+        <h4 class="font-semibold text-base-content text-sm mb-3">Product</h4>
+        <ul class="flex flex-col gap-2" role="list">
+          <li>
+            <a
+              href="#features"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Features</a
+            >
+          </li>
+          <li>
+            <a
+              href="#pricing"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Pricing</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Docs</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Changelog</a
+            >
+          </li>
+        </ul>
+      </div>
+
+      <!-- Company -->
+      <div>
+        <h4 class="font-semibold text-base-content text-sm mb-3">Company</h4>
+        <ul class="flex flex-col gap-2" role="list">
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >About</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Blog</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Careers</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Contact</a
+            >
+          </li>
+        </ul>
+      </div>
+
+      <!-- Legal -->
+      <div>
+        <h4 class="font-semibold text-base-content text-sm mb-3">Legal</h4>
+        <ul class="flex flex-col gap-2" role="list">
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Privacy</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Terms</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Security</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-base-content/50 hover:text-base-content transition-colors"
+              >Cookie Policy</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div
+      class="border-t border-base-300 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-center"
+    >
+      <p class="text-xs text-base-content/40">
+        © 2026 Godown AI · Built with ❤️ in Hyderabad, India
+      </p>
+      <p class="text-xs text-base-content/30">
+        All data stays on your premises · No cloud required
+      </p>
+    </div>
+  </div>
+</footer>

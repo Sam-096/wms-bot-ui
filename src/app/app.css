@@ -1,0 +1,8 @@
+/* Component-level overrides for the App shell only.
+   Global styles, Tailwind, and DaisyUI are configured
+   exclusively in src/styles.css (angular.json global). */
+
+/* Drawer transition */
+.drawer-side {
+  transition: transform 0.2s ease;
+}

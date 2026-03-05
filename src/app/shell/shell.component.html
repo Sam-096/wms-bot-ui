@@ -1,0 +1,48 @@
+<!-- Skip link (a11y) -->
+<a
+  href="#main-content"
+  class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[9999] focus:btn focus:btn-primary focus:btn-sm"
+>
+  Skip to main content
+</a>
+
+<div class="drawer lg:drawer-open h-screen overflow-hidden">
+  <!-- Drawer toggle input (checkbox) — controlled by Angular signal -->
+  <input
+    id="app-drawer"
+    type="checkbox"
+    class="drawer-toggle"
+    [checked]="drawerOpen()"
+    (change)="drawerOpen.set(!drawerOpen())"
+  />
+
+  <!-- ══ Main Content Column ══ -->
+  <div class="drawer-content flex flex-col h-screen overflow-hidden">
+    <!-- Sticky glassmorphism topbar -->
+    <app-topbar />
+
+    <!-- Scrollable page content -->
+    <main
+      id="main-content"
+      class="flex-1 overflow-y-auto bg-base-100 px-4 py-6 sm:px-6 lg:px-8"
+      role="main"
+      tabindex="-1"
+    >
+      <router-outlet />
+    </main>
+  </div>
+
+  <!-- ══ Sidebar ══ -->
+  <div class="drawer-side z-40">
+    <label
+      for="app-drawer"
+      class="drawer-overlay"
+      aria-label="Close navigation"
+    ></label>
+    <!-- SidebarComponent sets its own width (260px) via :host in sidebar.css -->
+    <app-sidebar (navClicked)="drawerOpen.set(false)" />
+  </div>
+</div>
+
+<!-- Floating AI chat widget (always on top) -->
+<app-chat-widget />

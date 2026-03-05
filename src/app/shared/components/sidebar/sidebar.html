@@ -1,0 +1,264 @@
+<!-- ══════════════════════════════════════════════════
+     Sidebar — Godown AI WMS
+     Linear/Vercel-quality dark nav
+══════════════════════════════════════════════════ -->
+
+<!-- ─── Logo / Brand ────────────────────────────── -->
+<div class="logo-glow px-5 pt-5 pb-4 border-b border-base-300 shrink-0">
+  <div class="flex items-center gap-3">
+    <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-sm">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="1.75"
+        class="text-primary-content"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+        />
+      </svg>
+    </div>
+    <div class="min-w-0">
+      <p class="font-bold text-sm text-base-content leading-tight tracking-tight">Godown AI</p>
+      <p class="text-xs text-base-content/40 leading-tight">WMS Platform</p>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Navigation ──────────────────────────────── -->
+<nav class="flex-1 overflow-y-auto py-3 px-3" aria-label="Main navigation">
+  <p class="text-xs font-semibold text-base-content/30 uppercase tracking-widest px-3 mb-2">
+    Navigation
+  </p>
+
+  <ul class="flex flex-col gap-0.5" role="list">
+    @for (item of navItems; track item.route) {
+      <li role="listitem">
+        <a
+          class="nav-link"
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: !!item.exact }"
+          (click)="navClicked.emit()"
+          [attr.aria-current]="null"
+        >
+          <!-- Icon per module -->
+          <span class="w-5 h-5 shrink-0" [class]="item.iconClass" aria-hidden="true">
+            @switch (item.icon) {
+              @case ('dashboard') {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
+                  />
+                </svg>
+              }
+              @case ('inward') {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+                  />
+                </svg>
+              }
+              @case ('outward') {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                  />
+                </svg>
+              }
+              @case ('gatepass') {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z"
+                  />
+                </svg>
+              }
+              @case ('inventory') {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+                  />
+                </svg>
+              }
+              @case ('bonds') {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                  />
+                </svg>
+              }
+              @case ('reports') {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
+                  />
+                </svg>
+              }
+            }
+          </span>
+
+          <span class="flex-1 leading-none">{{ item.label }}</span>
+
+          @if (item.badge) {
+            <span
+              class="badge badge-warning badge-xs font-bold tabular-nums"
+              [attr.aria-label]="item.badge + ' pending items'"
+            >
+              {{ item.badge }}
+            </span>
+          }
+        </a>
+      </li>
+    }
+  </ul>
+
+  <!-- AI section separator -->
+  <div class="mt-4 pt-4 border-t border-base-300">
+    <p class="text-xs font-semibold text-base-content/30 uppercase tracking-widest px-3 mb-2">
+      Assistant
+    </p>
+    <div
+      class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/8 border border-primary/15"
+    >
+      <div class="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="1.75"
+          class="text-primary"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+          />
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-semibold text-primary leading-tight">AI Assistant</p>
+        <p class="text-xs text-base-content/40 leading-tight">Telugu · Hindi · English</p>
+      </div>
+      <span class="status status-success status-xs shrink-0" aria-label="Online"></span>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── User Profile (pinned bottom) ────────────── -->
+<div class="shrink-0 border-t border-base-300 px-3 py-3">
+  <div
+    class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors cursor-pointer group"
+  >
+    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+      <span class="text-xs font-bold text-primary-content">WM</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm font-semibold text-base-content leading-tight truncate">WMS Admin</p>
+      <p class="text-xs text-base-content/40 leading-tight truncate">Warehouse Manager</p>
+    </div>
+    <button
+      class="btn btn-ghost btn-xs btn-square opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
+      aria-label="Sign out"
+      title="Sign out"
+      (click)="signOut()"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="15"
+        height="15"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="1.75"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
+        />
+      </svg>
+    </button>
+  </div>
+</div>

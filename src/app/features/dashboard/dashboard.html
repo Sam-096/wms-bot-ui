@@ -1,0 +1,198 @@
+<!-- ══════════════════════════════════════════════════
+     Dashboard — Godown AI WMS
+══════════════════════════════════════════════════ -->
+
+<!-- ─── Header ──────────────────────────────────── -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+  <div>
+    <p class="text-xs font-medium text-base-content/40 uppercase tracking-widest mb-1">
+      {{ today }}
+    </p>
+    <h1 class="text-3xl font-bold text-base-content">Dashboard</h1>
+    <p class="text-sm text-base-content/50 mt-1">Godown AI — Warehouse Overview</p>
+  </div>
+  <div class="flex gap-2">
+    <a routerLink="/inward/new" class="btn btn-primary btn-sm gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      New Inward
+    </a>
+    <a routerLink="/outward/new" class="btn btn-outline btn-sm">New Outward</a>
+  </div>
+</div>
+
+<!-- ─── KPI Row ───────────────────────────────────── -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  @for (kpi of kpis; track kpi.label) {
+    <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
+      <div class="card-body p-5 gap-3">
+        <p class="text-xs font-semibold text-base-content/50 uppercase tracking-widest">
+          {{ kpi.label }}
+        </p>
+        <div class="flex items-end justify-between gap-2">
+          <span class="text-4xl font-bold text-base-content tabular-nums">{{ kpi.value }}</span>
+          <span class="badge badge-sm mb-1" [class]="kpi.up ? 'badge-success' : 'badge-warning'">
+            {{ kpi.delta }}
+          </span>
+        </div>
+        <p class="text-xs text-base-content/40">{{ kpi.sub }}</p>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- ─── Main Grid ─────────────────────────────────── -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Recent Inward — spans 2 cols -->
+  <div class="card bg-base-200 border border-base-300 shadow-sm lg:col-span-2">
+    <div class="card-body p-0">
+      <div class="flex items-center justify-between px-5 pt-5 pb-3">
+        <div>
+          <h2 class="font-semibold text-base-content">Recent Inward Entries</h2>
+          <p class="text-xs text-base-content/40 mt-0.5">Last 5 entries</p>
+        </div>
+        <a routerLink="/inward" class="btn btn-ghost btn-xs gap-1">
+          View all
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+            <tr class="bg-base-300 text-base-content/50 text-xs uppercase tracking-wider">
+              <th>Entry</th>
+              <th>Vehicle</th>
+              <th>Commodity</th>
+              <th class="text-right">Bags</th>
+              <th>Time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of recentEntries; track e.id) {
+              <tr class="hover:bg-base-300/40 cursor-pointer transition-colors">
+                <td class="font-mono text-xs text-base-content/50">{{ e.id }}</td>
+                <td class="font-semibold text-sm tracking-wide">{{ e.vehicle }}</td>
+                <td>
+                  <span class="badge badge-ghost badge-xs">{{ e.commodity }}</span>
+                </td>
+                <td class="text-right text-sm tabular-nums">{{ e.bags }}</td>
+                <td class="text-xs text-base-content/40">{{ e.time }}</td>
+                <td>
+                  <span class="badge badge-xs" [class]="statusBadge(e.status)">
+                    {{ e.status }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Commodity Breakdown -->
+  <div class="card bg-base-200 border border-base-300 shadow-sm">
+    <div class="card-body p-5 gap-5">
+      <div>
+        <h2 class="font-semibold text-base-content">Stock Composition</h2>
+        <p class="text-xs text-base-content/40 mt-0.5">By commodity, this month</p>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        @for (c of commodities; track c.name) {
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium text-base-content">{{ c.name }}</span>
+              <span class="text-sm font-bold text-base-content tabular-nums">{{ c.pct }}%</span>
+            </div>
+            <div class="h-2 rounded-full bg-base-300 overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                [class]="c.color"
+                [style.width.%]="c.pct"
+              ></div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="divider my-0"></div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="flex flex-col items-center p-3 rounded-xl bg-base-300/50 gap-1">
+          <span class="text-2xl font-bold text-base-content">1,480</span>
+          <span class="text-xs text-base-content/40">Total Bags</span>
+        </div>
+        <div class="flex flex-col items-center p-3 rounded-xl bg-base-300/50 gap-1">
+          <span class="text-2xl font-bold text-base-content">29.6</span>
+          <span class="text-xs text-base-content/40">Tonnes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card bg-base-200 border border-base-300 shadow-sm">
+    <div class="card-body p-5 gap-4">
+      <h2 class="font-semibold text-base-content">Quick Actions</h2>
+      <div class="flex flex-col gap-2">
+        <a routerLink="/inward/new" class="btn btn-ghost justify-start gap-3 h-auto py-3">
+          <span class="text-xl" aria-hidden="true">📥</span>
+          <div class="text-left">
+            <p class="text-sm font-medium">New Inward Entry</p>
+            <p class="text-xs text-base-content/40">Record incoming stock</p>
+          </div>
+        </a>
+        <a routerLink="/outward/new" class="btn btn-ghost justify-start gap-3 h-auto py-3">
+          <span class="text-xl" aria-hidden="true">📤</span>
+          <div class="text-left">
+            <p class="text-sm font-medium">New Outward Entry</p>
+            <p class="text-xs text-base-content/40">Dispatch stock</p>
+          </div>
+        </a>
+        <a routerLink="/gate-pass/new" class="btn btn-ghost justify-start gap-3 h-auto py-3">
+          <span class="text-xl" aria-hidden="true">🚛</span>
+          <div class="text-left">
+            <p class="text-sm font-medium">Issue Gate Pass</p>
+            <p class="text-xs text-base-content/40">Vehicle exit clearance</p>
+          </div>
+        </a>
+        <a routerLink="/inventory" class="btn btn-ghost justify-start gap-3 h-auto py-3">
+          <span class="text-xl" aria-hidden="true">📦</span>
+          <div class="text-left">
+            <p class="text-sm font-medium">View Inventory</p>
+            <p class="text-xs text-base-content/40">Current stock levels</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Approvals Alert -->
+  <div class="card border shadow-sm lg:col-span-2"
+       [class]="'bg-warning/10 border-warning/30'">
+    <div class="card-body p-5 gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-warning" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <p class="font-semibold text-base-content">12 Entries Pending Approval</p>
+          <p class="text-xs text-base-content/60 mt-0.5">
+            Oldest entry is 6 hours old — review and approve to keep operations moving.
+          </p>
+        </div>
+        <a routerLink="/inward" class="btn btn-warning btn-sm shrink-0">Review Now</a>
+      </div>
+    </div>
+  </div>
+
+</div>

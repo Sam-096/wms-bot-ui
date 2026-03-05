@@ -1,25 +1,28 @@
-import { Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ChatWidgetComponent } from './features/chat-widget/chat-widget';
-import { environment } from '../environments/environment';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ChatWidgetComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.scss',
+  styleUrl: './app.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App {
-  title = 'wms-chat-ui';
-
-  private http = inject(HttpClient);
+export class App implements OnInit {
+  private readonly http = inject(HttpClient);
 
   ngOnInit(): void {
-    // Wake Render backend immediately on app load
+    // Wake Render backend on app load (silent fail OK)
     this.http
       .get(`${environment.apiUrl}/api/bot/health`, { responseType: 'text' })
-      .subscribe({ error: () => {} }); // silent fail OK
+      .subscribe({ error: () => {} });
   }
 }
