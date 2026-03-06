@@ -2,7 +2,15 @@ import { ChangeDetectionStrategy, Component, EventEmitter, inject, Output } from
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
-type NavIcon = 'dashboard' | 'inward' | 'outward' | 'gatepass' | 'inventory' | 'bonds' | 'reports';
+type NavIcon =
+  | 'dashboard'
+  | 'inward'
+  | 'outward'
+  | 'gatepass'
+  | 'inventory'
+  | 'bonds'
+  | 'reports'
+  | 'robot';
 
 interface NavItem {
   label: string;
@@ -68,6 +76,12 @@ export class SidebarComponent {
       label: 'Reports',
       route: '/reports',
       icon: 'reports',
+      iconClass: 'text-error',
+    },
+    {
+      label: 'AI Chat',
+      route: '/ai',
+      icon: 'robot',
       iconClass: 'text-error',
     },
   ];

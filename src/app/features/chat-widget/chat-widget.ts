@@ -1,31 +1,41 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+  AfterViewChecked,
+  inject,
+} from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { trigger, transition, style, animate, state } from '@angular/animations';
+import { Subject } from 'rxjs';
+import { takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { ChatMessage, Language, UserRole } from '../../core/models/chat-message.model';
 import { BotService } from '../../core/services/bot';
-import { MatIconRegistry } from '@angular/material/icon';
-import { DomSanitizer } from '@angular/platform-browser';
+import { VoiceInputService } from '../../core/services/voice-input.service';
+import { FaqConfigService, FaqItem } from '../../core/services/faq-config.service';
+import { SuggestionEngineService } from '../../core/services/suggestion-engine.service';
+import { LanguageDetectorService } from '../../core/services/language-detector.service';
+
+const HISTORY_KEY = (warehouse: string) => `wms_chat_history_${warehouse}`;
+const MAX_HISTORY = 20;
+const FEEDBACK_FADE_MS = 3000;
 
 @Component({
   selector: 'app-chat-widget',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatTooltipModule],
+  imports: [CommonModule, FormsModule, DatePipe],
   templateUrl: './chat-widget.html',
   styleUrls: ['./chat-widget.scss'],
   animations: [
-    // 1. FAB Button Animation
     trigger('fabAnimation', [
-      state('active', style({ transform: 'rotate(90deg)' })),
-      state('inactive', style({ transform: 'rotate(0deg)' })),
-      transition('inactive <=> active', animate('200ms ease-out')),
+      state('open', style({ transform: 'rotate(90deg)' })),
+      state('closed', style({ transform: 'rotate(0deg)' })),
+      transition('closed <=> open', animate('200ms ease-out')),
     ]),
-
-    // 2. Chat Panel Entrance/Exit
     trigger('panelAnimation', [
       transition(':enter', [
         style({ opacity: 0, transform: 'translateY(20px) scale(0.95)' }),
@@ -35,63 +45,76 @@ import { DomSanitizer } from '@angular/platform-browser';
         animate('150ms ease-in', style({ opacity: 0, transform: 'translateY(20px) scale(0.95)' })),
       ]),
     ]),
-
-    // 3. Individual Message Entrance
     trigger('messageAnimation', [
       transition(':enter', [
         style({ opacity: 0, transform: 'translateY(10px)' }),
         animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
       ]),
     ]),
+    trigger('suggestionAnimation', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateX(-8px)' }),
+        animate('200ms ease-out', style({ opacity: 1, transform: 'translateX(0)' })),
+      ]),
+    ]),
   ],
 })
-export class ChatWidgetComponent implements OnInit, AfterViewChecked {
+export class ChatWidgetComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('messagesEnd') messagesEnd!: ElementRef;
   @ViewChild('inputField') inputField!: ElementRef;
+
+  private readonly botService = inject(BotService);
+  private readonly voiceService = inject(VoiceInputService);
+  private readonly faqService = inject(FaqConfigService);
+  private readonly suggestionEngine = inject(SuggestionEngineService);
+  private readonly langDetector = inject(LanguageDetectorService);
+  private readonly destroy$ = new Subject<void>();
+  private readonly inputChange$ = new Subject<string>();
 
   // ── UI state ──────────────────────────────────────────────
   isOpen = false;
   isMinimized = false;
-  isListening = false;
   isLoading = false;
   isFocused = false;
+  showLangDetectedHint = false;
+  detectedLangFlag = '';
+  toastMessage = '';
+  private toastTimer: any;
+
+  // ── Voice state (from service) ─────────────────────────
+  voiceState: 'idle' | 'listening' | 'processing' = 'idle';
+  get isListening(): boolean { return this.voiceState === 'listening'; }
+  get voiceSupported(): boolean { return this.voiceService.isSupported; }
 
   // ── Chat data ─────────────────────────────────────────────
   messages: ChatMessage[] = [];
   inputText = '';
-  language: Language = 'te';
+  language: Language = 'en';
   role: UserRole = 'manager';
   warehouseName = 'Warehouse';
 
-  private recognition: any;
-  private synthesis = window.speechSynthesis;
+  // ── FAQs ──────────────────────────────────────────────────
+  faqs: FaqItem[] = [];
+
+  private synthesis = typeof window !== 'undefined' ? window.speechSynthesis : null;
   private shouldScroll = false;
 
   // ── Static config ─────────────────────────────────────────
   readonly languages = [
-    { code: 'te', label: 'తెలుగు' },
-    { code: 'hi', label: 'हिंदी' },
-    { code: 'en', label: 'English' },
-    { code: 'ta', label: 'தமிழ்' },
-    { code: 'kn', label: 'ಕನ್ನಡ' },
-    { code: 'mr', label: 'मराठी' },
+    { code: 'te', label: 'తెలుగు', flag: '🇮🇳' },
+    { code: 'hi', label: 'हिंदी', flag: '🇮🇳' },
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'ta', label: 'தமிழ்', flag: '🇮🇳' },
+    { code: 'kn', label: 'ಕನ್ನಡ', flag: '🇮🇳' },
+    { code: 'mr', label: 'मराठी', flag: '🇮🇳' },
   ];
 
   readonly roles = [
     { code: 'driver', label: '🚛 Driver' },
-    { code: 'gatekeeper', label: '🔒 Gate' },
+    { code: 'gatekeeper', label: '🔒 Gate Staff' },
     { code: 'manager', label: '📦 Manager' },
     { code: 'admin', label: '⚙️ Admin' },
   ];
-
-  readonly suggestions: Record<Language, string[]> = {
-    te: ['Bond status చెప్పు', 'Gate pass ఎలా?', 'Stock ఎంత ఉంది?'],
-    hi: ['Bond status बताओ', 'Gate pass कैसे?', 'Stock कितना है?'],
-    en: ['Check bond status', 'How to gate pass?', 'Stock available?'],
-    ta: ['Bond status சொல்', 'Gate pass எப்படி?', 'Stock எவ்வளவு?'],
-    kn: ['Bond status ಹೇಳಿ', 'Gate pass ಹೇಗೆ?', 'Stock ಎಷ್ಟು?'],
-    mr: ['Bond status सांगा', 'Gate pass कसा?', 'Stock किती?'],
-  };
 
   readonly welcomeMessages: Record<Language, string> = {
     te: 'నమస్కారం! మీ warehouse assistant నేను. ఏమి సహాయం చేయాలి?',
@@ -102,19 +125,19 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
     mr: 'नमस्कार! मी तुमचा warehouse assistant. कशी मदत करू?',
   };
 
-  constructor(
-    private botService: BotService,
-    private matIconRegistry: MatIconRegistry,
-    private domSanitizer: DomSanitizer,
-  ) {
-    this.matIconRegistry.addSvgIcon(
-      'godown_ai', // Your custom name
-      this.domSanitizer.bypassSecurityTrustResourceUrl('public/ai-hub-svgrepo-com.svg'),
-    );
-  }
-
   ngOnInit(): void {
-    this.initVoice();
+    this.faqs = this.faqService.getRoleBasedFaqs(this.role);
+    this.loadHistory();
+
+    // Debounced language auto-detect on input
+    this.inputChange$
+      .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe((text) => this.autoDetectLanguage(text));
+
+    // Sync voice state
+    this.voiceService.state$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((s) => (this.voiceState = s));
   }
 
   ngAfterViewChecked(): void {
@@ -124,51 +147,45 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  // ── Voice ─────────────────────────────────────────────────
-  private initVoice(): void {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) return;
-
-    this.recognition = new SR();
-    this.recognition.continuous = false;
-    this.recognition.interimResults = false;
-
-    this.recognition.onresult = (e: any) => {
-      this.inputText = e.results[0][0].transcript;
-      this.isListening = false;
-      this.send();
-    };
-    this.recognition.onerror = () => {
-      this.isListening = false;
-    };
-    this.recognition.onend = () => {
-      this.isListening = false;
-    };
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
+  // ── Voice ──────────────────────────────────────────────────
   toggleVoice(): void {
-    if (!this.recognition) {
-      alert('Voice not supported. Please use Chrome.');
+    if (!this.voiceSupported) {
+      this.showToast('Voice input is not supported in this browser');
       return;
     }
     if (this.isListening) {
-      this.recognition.stop();
-    } else {
-      const map: Record<Language, string> = {
-        te: 'te-IN',
-        hi: 'hi-IN',
-        en: 'en-US',
-        ta: 'ta-IN',
-        kn: 'kn-IN',
-        mr: 'mr-IN',
-      };
-      this.recognition.lang = map[this.language];
-      this.recognition.start();
-      this.isListening = true;
+      this.voiceService.stopListening();
+      return;
     }
+    this.voiceService.startListening(this.language).subscribe({
+      next: (transcript) => {
+        this.inputText = transcript; // paste — do NOT auto-send
+        this.voiceState = 'idle';
+        setTimeout(() => this.inputField?.nativeElement.focus(), 100);
+      },
+      error: (err) => {
+        if (err === 'PERMISSION_DENIED') {
+          this.showToast('Microphone access denied. Please allow mic in browser settings.');
+        } else if (err === 'UNSUPPORTED') {
+          this.showToast('Voice input is not supported in this browser');
+        } else {
+          this.showToast('Voice recognition error. Please try again.');
+        }
+      },
+    });
   }
 
   // ── Send ──────────────────────────────────────────────────
+  useFaq(faq: FaqItem): void {
+    this.inputText = faq.message;
+    this.send();
+  }
+
   useSuggestion(text: string): void {
     this.inputText = text;
     this.send();
@@ -178,15 +195,24 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
     const text = this.inputText.trim();
     if (!text || this.isLoading) return;
 
-    this.messages.push({ role: 'user', text, timestamp: new Date() });
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      text,
+      timestamp: new Date(),
+      sessionDate: toDateStr(new Date()),
+    };
+    this.messages.push(userMsg);
     this.inputText = '';
     this.shouldScroll = true;
 
     const botMsg: ChatMessage = {
+      id: crypto.randomUUID(),
       role: 'bot',
       text: '',
       timestamp: new Date(),
       isLoading: true,
+      sessionDate: toDateStr(new Date()),
     };
     this.messages.push(botMsg);
     this.isLoading = true;
@@ -200,13 +226,79 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
         botMsg.text = '⚠️ Connection error. Please try again.';
         botMsg.isLoading = false;
         this.isLoading = false;
+        this.saveHistory();
       },
       complete: () => {
         botMsg.isLoading = false;
+        botMsg.suggestions = this.suggestionEngine.getSuggestions(botMsg.text, this.language);
         this.isLoading = false;
         this.speakResponse(botMsg.text);
+        this.saveHistory();
       },
     });
+  }
+
+  // ── Reactions ─────────────────────────────────────────────
+  react(msg: ChatMessage, helpful: boolean): void {
+    if (msg.reaction !== null && msg.reaction !== undefined) return;
+    msg.reaction = helpful ? 'up' : 'down';
+
+    // Fire-and-forget POST — no backend required to succeed
+    // POST /api/v1/chat/feedback { messageId, helpful }
+    // (wired up once backend endpoint exists)
+
+    setTimeout(() => {
+      msg.reactionDone = true;
+      setTimeout(() => {
+        msg.reaction = null;
+        msg.reactionDone = false;
+      }, FEEDBACK_FADE_MS);
+    }, 600);
+  }
+
+  // ── Copy ──────────────────────────────────────────────────
+  copyMessage(msg: ChatMessage): void {
+    navigator.clipboard.writeText(msg.text).then(() => {
+      this.showToast('Copied to clipboard!');
+    });
+  }
+
+  // ── Language auto-detect ───────────────────────────────────
+  onInputChange(text: string): void {
+    this.inputChange$.next(text);
+  }
+
+  private autoDetectLanguage(text: string): void {
+    const detected = this.langDetector.detect(text);
+    if (detected && detected !== this.language) {
+      this.language = detected;
+      this.showLangDetectedHint = true;
+      const found = this.languages.find((l) => l.code === detected);
+      this.detectedLangFlag = found ? `${found.flag} ${found.label}` : '';
+      setTimeout(() => (this.showLangDetectedHint = false), 2500);
+    }
+  }
+
+  // ── History ───────────────────────────────────────────────
+  private loadHistory(): void {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY(this.warehouseName));
+      if (!raw) return;
+      const saved: ChatMessage[] = JSON.parse(raw);
+      this.messages = saved.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }));
+    } catch {}
+  }
+
+  private saveHistory(): void {
+    try {
+      const toSave = this.messages.slice(-MAX_HISTORY);
+      localStorage.setItem(HISTORY_KEY(this.warehouseName), JSON.stringify(toSave));
+    } catch {}
+  }
+
+  clearHistory(): void {
+    this.messages = [];
+    localStorage.removeItem(HISTORY_KEY(this.warehouseName));
   }
 
   // ── TTS ───────────────────────────────────────────────────
@@ -214,12 +306,8 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
     if (!this.synthesis) return;
     this.synthesis.cancel();
     const map: Record<Language, string> = {
-      te: 'te-IN',
-      hi: 'hi-IN',
-      en: 'en-US',
-      ta: 'ta-IN',
-      kn: 'kn-IN',
-      mr: 'mr-IN',
+      te: 'te-IN', hi: 'hi-IN', en: 'en-US',
+      ta: 'ta-IN', kn: 'kn-IN', mr: 'mr-IN',
     };
     const u = new SpeechSynthesisUtterance(
       text.replace(/[^\w\s.,!?।\u0C00-\u0C7F\u0900-\u097F]/g, ''),
@@ -238,50 +326,62 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  minimizeChat(): void {
-    this.isMinimized = true;
-  }
-  restoreChat(): void {
-    this.isMinimized = false;
-  }
+  minimizeChat(): void { this.isMinimized = true; }
+  restoreChat(): void  { this.isMinimized = false; }
 
   onLanguageChange(): void {
-    this.messages = [];
+    this.faqs = this.faqService.getRoleBasedFaqs(this.role);
   }
 
-  get currentSuggestions(): string[] {
-    return this.suggestions[this.language] ?? [];
+  onRoleChange(): void {
+    this.faqs = this.faqService.getRoleBasedFaqs(this.role);
   }
 
-  get welcomeMessage(): string {
-    return this.welcomeMessages[this.language];
+  get fabState(): string { return this.isOpen ? 'open' : 'closed'; }
+
+  get welcomeMessage(): string { return this.welcomeMessages[this.language]; }
+
+  isDesktop(): boolean { return window.innerWidth >= 1024; }
+
+  onEnterKey(event: KeyboardEvent): void {
+    if (window.innerWidth < 1024) return;
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.send();
+    }
   }
 
-  get fabState(): string {
-    return this.isOpen ? 'open' : 'closed';
+  showDateSeparator(index: number): boolean {
+    if (index === 0) return true;
+    const prev = this.messages[index - 1];
+    const curr = this.messages[index];
+    return prev.sessionDate !== curr.sessionDate;
   }
 
-  trackByIndex = (i: number) => i;
+  formatSessionDate(dateStr: string | undefined): string {
+    if (!dateStr) return 'Today';
+    const today = toDateStr(new Date());
+    const yesterday = toDateStr(new Date(Date.now() - 86400000));
+    if (dateStr === today) return 'Today';
+    if (dateStr === yesterday) return 'Yesterday';
+    return new Date(dateStr).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+  }
+
+  trackById = (_: number, msg: ChatMessage) => msg.id;
+
+  private showToast(message: string): void {
+    this.toastMessage = message;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => (this.toastMessage = ''), 3500);
+  }
 
   private scrollToBottom(): void {
     try {
       this.messagesEnd?.nativeElement.scrollIntoView({ behavior: 'smooth' });
     } catch {}
   }
+}
 
-  isDesktop(): boolean {
-    return window.innerWidth >= 1024;
-  }
-
-  onEnterKey(event: KeyboardEvent): void {
-    // Mobile: never send on Enter (let user use send button)
-    // Desktop: send on Enter, newline on Shift+Enter
-    const isMobile = window.innerWidth < 1024;
-    if (isMobile) return;
-
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      this.send();
-    }
-  }
+function toDateStr(d: Date): string {
+  return d.toISOString().slice(0, 10);
 }

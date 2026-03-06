@@ -2,164 +2,101 @@
      Godown AI — Chat Widget
 ══════════════════════════════════════════ -->
 
-<!-- ── FAB Trigger ─────────────────────────── -->
-<!-- Hide FAB when chat is open on mobile (overlaps send button) -->
-@if (!isOpen || isDesktop()) {
-<div class="indicator fixed bottom-6 right-6 z-50">
-  @if (!isOpen) {
-    <span
-      class="indicator-item badge badge-error badge-sm font-bold select-none"
-      [class.hidden]="isOpen"
-      >AI</span
-    >
-  }
-  <div class="tooltip tooltip-left" data-tip="Godown AI Assistant">
-    <button
-      class="btn btn-circle btn-primary w-14 h-14 shadow-2xl active:scale-90 transition-transform overflow-hidden"
-      [class.fab-thinking]="isLoading"
-      (click)="toggleChat()"
-      [@fabAnimation]="fabState"
-      aria-label="Godown AI Assistant"
-    >
-      @if (isOpen) {
-        <svg
-          class="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      } @else {
-        <svg
-          class="w-7 h-7"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.8"
-            d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75zM6.75 12h10.5M9 15.75h.008M15 15.75h.008M6.75 19.5A2.25 2.25 0 009 21.75h6a2.25 2.25 0 002.25-2.25V12H6.75v7.5z"
-          />
-        </svg>
-      }
-    </button>
+<!-- ── Toast ──────────────────────────────── -->
+@if (toastMessage) {
+  <div class="toast toast-top toast-center z-[9999] pointer-events-none">
+    <div class="alert alert-info text-sm py-2 px-4 shadow-lg max-w-xs">
+      <span>{{ toastMessage }}</span>
+    </div>
   </div>
-</div>
-} <!-- end @if (!isOpen || isDesktop()) -->
+}
+
+<!-- ── Language auto-detect hint ─────────── -->
+@if (showLangDetectedHint) {
+  <div class="fixed bottom-28 right-6 z-50 bg-base-300 text-base-content text-xs px-3 py-1.5 rounded-full shadow-lg border border-base-300 flex items-center gap-1.5 lang-hint-pill">
+    <span class="text-primary">⚡</span> Detected {{ detectedLangFlag }}
+  </div>
+}
+
+<!-- ── FAB Trigger ─────────────────────────── -->
+@if (!isOpen || isDesktop()) {
+  <div class="indicator fixed bottom-6 right-6 z-50">
+    @if (!isOpen) {
+      <span class="indicator-item badge badge-error badge-sm font-bold select-none">AI</span>
+    }
+    <div class="tooltip tooltip-left" data-tip="Godown AI Assistant">
+      <button
+        class="btn btn-circle btn-primary w-14 h-14 shadow-2xl active:scale-90 transition-transform overflow-hidden"
+        [class.fab-thinking]="isLoading"
+        (click)="toggleChat()"
+        [@fabAnimation]="fabState"
+        aria-label="Godown AI Assistant"
+      >
+        @if (isOpen) {
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        } @else {
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+              d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75zM6.75 12h10.5M9 15.75h.008M15 15.75h.008M6.75 19.5A2.25 2.25 0 009 21.75h6a2.25 2.25 0 002.25-2.25V12H6.75v7.5z"/>
+          </svg>
+        }
+      </button>
+    </div>
+  </div>
+}
 
 <!-- ── Chat Window ──────────────────────────── -->
 @if (isOpen && !isMinimized) {
   <div
-    class="chat-window fixed z-40 flex flex-col bg-base-200 shadow-2xl overflow-hidden inset-0 border-0 rounded-none lg:inset-auto lg:border lg:border-base-300 lg:rounded-2xl lg:bottom-6 lg:right-24 lg:w-96 lg:h-[600px]"
+    class="chat-window fixed z-40 flex flex-col bg-base-200 shadow-2xl overflow-hidden
+           inset-0 border-0 rounded-none
+           lg:inset-auto lg:border lg:border-base-300 lg:rounded-2xl lg:bottom-6 lg:right-24 lg:w-96 lg:h-[600px]"
     [@panelAnimation]
     role="dialog"
     aria-label="Godown AI Chat"
     aria-modal="true"
   >
-    <!-- HEADER -->
-    <div
-      class="flex items-center gap-2.5 px-3 py-2.5 bg-base-200 border-b border-base-300 shrink-0"
-    >
-      <!-- Avatar + online dot -->
+    <!-- ══ HEADER ══ -->
+    <div class="flex items-center gap-2.5 px-3 py-2.5 bg-base-200 border-b border-base-300 shrink-0">
       <div class="relative shrink-0">
         <div class="ai-avatar w-9 h-9 rounded-full flex items-center justify-center">
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="white"
-            stroke-width="1.8"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75z"
-            />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12h10.5" />
+          <svg class="w-5 h-5" fill="none" stroke="white" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12h10.5"/>
           </svg>
         </div>
-        <span
-          class="online-dot absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full border-2 border-base-200"
-        ></span>
+        <span class="online-dot absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full border-2 border-base-200"></span>
       </div>
 
-      <!-- Title + language pills -->
       <div class="flex-1 min-w-0">
         <p class="font-semibold text-sm text-base-content leading-none">Godown AI</p>
         <p class="text-[11px] text-base-content/50 mt-0.5">Warehouse Assistant</p>
-        <p class="text-[10px] text-base-content/30 mt-0.5 truncate flex items-center gap-1">
-          <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-            />
-          </svg>
-          Telugu · Hindi · English · Tamil
-        </p>
       </div>
 
-      <!-- Right controls -->
       <div class="flex gap-1 items-center shrink-0">
-        <!-- Settings dropdown (language + role) -->
+        <!-- Settings dropdown -->
         <div class="dropdown dropdown-end">
-          <button
-            tabindex="0"
-            class="btn btn-ghost btn-xs btn-circle"
-            aria-label="Language and role settings"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
+          <button tabindex="0" class="btn btn-ghost btn-xs btn-circle" aria-label="Settings">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
           </button>
-          <div
-            tabindex="0"
-            class="dropdown-content bg-base-100 border border-base-300 rounded-box shadow-xl w-48 z-50 p-2 mt-1"
-          >
-            <p
-              class="text-[10px] text-base-content/40 uppercase tracking-wider px-2 pb-1.5 font-semibold"
-            >
-              Language
-            </p>
+          <div tabindex="0" class="dropdown-content bg-base-100 border border-base-300 rounded-box shadow-xl w-52 z-50 p-2 mt-1">
+            <p class="text-[10px] text-base-content/40 uppercase tracking-wider px-2 pb-1.5 font-semibold">Language</p>
             <ul class="menu menu-xs p-0 gap-0.5">
               @for (l of languages; track l.code) {
                 <li>
-                  <button
-                    class="text-xs rounded-lg"
+                  <button class="text-xs rounded-lg justify-between"
                     [class.text-primary]="language === l.code"
                     [class.font-semibold]="language === l.code"
-                    (click)="language = $any(l.code); onLanguageChange()"
-                  >
-                    {{ l.label }}
+                    (click)="language = $any(l.code); onLanguageChange()">
+                    <span>{{ l.label }}</span>
+                    @if (language === l.code) { <span class="text-primary">✓</span> }
                   </button>
                 </li>
               }
@@ -168,130 +105,76 @@
             <ul class="menu menu-xs p-0 gap-0.5">
               @for (r of roles; track r.code) {
                 <li>
-                  <button
-                    class="text-xs rounded-lg"
+                  <button class="text-xs rounded-lg justify-between"
                     [class.text-primary]="role === r.code"
                     [class.font-semibold]="role === r.code"
-                    (click)="role = $any(r.code)"
-                  >
-                    {{ r.label }}
+                    (click)="role = $any(r.code); onRoleChange()">
+                    <span>{{ r.label }}</span>
+                    @if (role === r.code) { <span class="text-primary">✓</span> }
                   </button>
                 </li>
               }
             </ul>
+            <div class="divider my-1.5"></div>
+            <button class="btn btn-ghost btn-xs w-full text-error text-xs" (click)="clearHistory()">
+              🗑 Clear History
+            </button>
           </div>
         </div>
 
         <!-- Minimize -->
-        <button
-          class="btn btn-ghost btn-xs btn-circle"
-          (click)="minimizeChat()"
-          aria-label="Minimize"
-        >
-          <svg
-            class="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4" />
+        <button class="btn btn-ghost btn-xs btn-circle" (click)="minimizeChat()" aria-label="Minimize">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/>
           </svg>
         </button>
 
         <!-- Close -->
-        <button
-          class="btn btn-ghost btn-xs btn-circle hover:text-error"
-          (click)="toggleChat()"
-          aria-label="Close"
-        >
-          <svg
-            class="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2.5"
-              d="M6 18L18 6M6 6l12 12"
-            />
+        <button class="btn btn-ghost btn-xs btn-circle hover:text-error" (click)="toggleChat()" aria-label="Close">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
       </div>
     </div>
 
-    <!-- MESSAGES AREA -->
+    <!-- ══ MESSAGES ══ -->
     <div class="chat-messages flex-1 overflow-y-auto p-3 flex flex-col gap-3">
-      <div class="divider text-[11px] text-base-content/30 my-0">Today</div>
 
-      <!-- Welcome / empty state -->
+      <!-- Empty / welcome state -->
       @if (messages.length === 0) {
-        <div class="flex flex-col items-center justify-center flex-1 gap-3 py-8 text-center">
+        <div class="flex flex-col items-center justify-center flex-1 gap-3 py-6 text-center">
           <div class="ai-avatar w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
-            <svg
-              class="w-7 h-7"
-              fill="none"
-              stroke="white"
-              stroke-width="1.5"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75zM6.75 12h10.5M9 15.75h.008M15 15.75h.008M6.75 19.5A2.25 2.25 0 009 21.75h6a2.25 2.25 0 002.25-2.25V12H6.75v7.5z"
-              />
+            <svg class="w-7 h-7" fill="none" stroke="white" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75zM6.75 12h10.5M9 15.75h.008M15 15.75h.008M6.75 19.5A2.25 2.25 0 009 21.75h6a2.25 2.25 0 002.25-2.25V12H6.75v7.5z"/>
             </svg>
           </div>
-          <p class="text-sm font-semibold text-base-content leading-snug max-w-[220px]">
-            {{ welcomeMessage }}
-          </p>
-          <p class="text-xs text-base-content/40 max-w-[200px]">
-            Ask about stock levels, inward entries, gate passes or generate reports.
-          </p>
-          <div class="flex flex-wrap gap-2 justify-center mt-1">
-            @for (s of currentSuggestions; track s) {
-              <button
-                class="btn btn-xs btn-ghost border border-base-300 rounded-full text-[11px] hover:border-primary hover:text-primary transition-colors"
-                (click)="useSuggestion(s)"
-              >
-                {{ s }}
-              </button>
-            }
-          </div>
+          <p class="text-sm font-semibold text-base-content max-w-[220px] leading-snug">{{ welcomeMessage }}</p>
+          <p class="text-xs text-base-content/40 max-w-[200px]">Ask about stock, inward entries, gate passes or generate reports.</p>
         </div>
       }
 
       <!-- Messages list -->
-      @for (msg of messages; track trackByIndex($index)) {
+      @for (msg of messages; track trackById($index, msg); let i = $index) {
+
+        <!-- Date separator -->
+        @if (showDateSeparator(i)) {
+          <div class="divider text-[11px] text-base-content/30 my-0">
+            {{ formatSessionDate(msg.sessionDate) }}
+          </div>
+        }
+
         <!-- USER bubble -->
         @if (msg.role === 'user') {
           <div class="flex flex-col items-end gap-1" [@messageAnimation]>
-            <div
-              class="bg-primary text-primary-content px-4 py-2.5 rounded-2xl rounded-br-sm max-w-[82%] text-sm leading-relaxed break-words shadow-sm"
-            >
+            <div class="bg-primary text-primary-content px-4 py-2.5 rounded-2xl rounded-br-sm max-w-[82%] text-sm leading-relaxed break-words shadow-sm">
               {{ msg.text }}
             </div>
             <div class="flex items-center gap-1.5 pr-1">
-              <span class="text-[10px] text-base-content/30">{{
-                msg.timestamp | date: 'h:mm a'
-              }}</span>
-              <svg
-                class="w-3 h-3 text-base-content/30 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2.5"
-                  d="M5 13l4 4L19 7"
-                />
+              <span class="text-[10px] text-base-content/30">{{ msg.timestamp | date:'h:mm a' }}</span>
+              <svg class="w-3 h-3 text-base-content/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
               </svg>
             </div>
           </div>
@@ -300,123 +183,126 @@
         <!-- BOT bubble -->
         @if (msg.role === 'bot') {
           <div class="flex items-end gap-2" [@messageAnimation]>
-            <!-- Mini avatar -->
-            <div
-              class="ai-avatar-sm w-6 h-6 rounded-full shrink-0 flex items-center justify-center"
-            >
-              <svg
-                class="w-3 h-3"
-                fill="none"
-                stroke="white"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75z"
-                />
+            <div class="ai-avatar-sm w-6 h-6 rounded-full shrink-0 flex items-center justify-center">
+              <svg class="w-3 h-3" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75z"/>
               </svg>
             </div>
 
             <div class="flex flex-col gap-1 max-w-[82%]">
-              <div
-                class="bg-base-300 text-base-content px-4 py-2.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed break-words shadow-sm"
-              >
-                @if (msg.isLoading && !msg.text) {
-                  <!-- Typing dots -->
-                  <div class="flex gap-1.5 items-center py-0.5 h-5">
-                    <span class="typing-dot"></span>
-                    <span class="typing-dot" style="animation-delay: 150ms"></span>
-                    <span class="typing-dot" style="animation-delay: 300ms"></span>
-                  </div>
-                } @else {
-                  {{ msg.text }}
-                  @if (msg.isLoading) {
-                    <span class="cursor-blink text-primary ml-0.5">▋</span>
+              <!-- Bubble -->
+              <div class="relative group">
+                <div class="bg-base-300 text-base-content px-4 py-2.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed break-words shadow-sm">
+                  @if (msg.isLoading && !msg.text) {
+                    <div class="flex gap-1.5 items-center py-0.5 h-5">
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot" style="animation-delay:150ms"></span>
+                      <span class="typing-dot" style="animation-delay:300ms"></span>
+                    </div>
+                  } @else {
+                    {{ msg.text }}
+                    @if (msg.isLoading) {
+                      <span class="cursor-blink text-primary ml-0.5">▋</span>
+                    }
                   }
+                </div>
+
+                <!-- Copy button (hover) -->
+                @if (!msg.isLoading && msg.text) {
+                  <button
+                    class="copy-btn absolute -top-2 -right-2 btn btn-circle btn-xs bg-base-100 border border-base-300 shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                    (click)="copyMessage(msg)"
+                    aria-label="Copy message"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                  </button>
                 }
               </div>
-              <span class="text-[10px] text-base-content/30 pl-1">{{
-                msg.timestamp | date: 'h:mm a'
-              }}</span>
+
+              <span class="text-[10px] text-base-content/30 pl-1">{{ msg.timestamp | date:'h:mm a' }}</span>
+
+              <!-- Reactions -->
+              @if (!msg.isLoading && msg.text) {
+                <div class="flex items-center gap-1.5 pl-1">
+                  @if (msg.reactionDone) {
+                    <span class="text-[10px] text-success reaction-thanks">Thanks for feedback! 🙏</span>
+                  } @else if (msg.reaction == null) {
+                    <button
+                      class="reaction-btn"
+                      (click)="react(msg, true)"
+                      aria-label="Helpful"
+                    >👍</button>
+                    <button
+                      class="reaction-btn"
+                      (click)="react(msg, false)"
+                      aria-label="Not helpful"
+                    >👎</button>
+                  } @else {
+                    <span class="text-[10px] text-base-content/40">
+                      {{ msg.reaction === 'up' ? '👍 Glad to help!' : '👎 Will improve!' }}
+                    </span>
+                  }
+                </div>
+              }
+
+              <!-- Contextual suggestions -->
+              @if (!msg.isLoading && msg.suggestions && msg.suggestions.length > 0) {
+                <div class="flex flex-wrap gap-1.5 mt-1">
+                  @for (s of msg.suggestions; track s; let i = $index) {
+                    <button
+                      class="btn btn-xs btn-ghost border border-base-300 rounded-full text-[11px] hover:border-primary hover:text-primary transition-colors suggestion-pill"
+                      [style.animation-delay]="(i * 80) + 'ms'"
+                      (click)="useSuggestion(s)"
+                      [@suggestionAnimation]
+                    >
+                      {{ s }}
+                    </button>
+                  }
+                </div>
+              }
             </div>
           </div>
         }
       }
 
-      <!-- Scroll anchor -->
       <div #messagesEnd></div>
     </div>
 
-    <!-- QUICK ACTIONS BAR -->
-    <div
-      class="quick-actions-bar overflow-x-auto flex gap-2 px-3 py-2 border-t border-base-300 shrink-0"
-    >
-      <button
-        class="btn btn-xs btn-outline rounded-full whitespace-nowrap shrink-0 text-[11px]"
-        (click)="useSuggestion('Check Stock')"
-      >
-        📦 Check Stock
-      </button>
-      <button
-        class="btn btn-xs btn-outline rounded-full whitespace-nowrap shrink-0 text-[11px]"
-        (click)="useSuggestion('Pending Inward')"
-      >
-        ⏳ Pending Inward
-      </button>
-      <button
-        class="btn btn-xs btn-outline rounded-full whitespace-nowrap shrink-0 text-[11px]"
-        (click)="useSuggestion('Gate Passes')"
-      >
-        🚪 Gate Passes
-      </button>
-      <button
-        class="btn btn-xs btn-outline rounded-full whitespace-nowrap shrink-0 text-[11px]"
-        (click)="useSuggestion('Low Stock Alert')"
-      >
-        ⚠️ Low Stock
-      </button>
-      <button
-        class="btn btn-xs btn-outline rounded-full whitespace-nowrap shrink-0 text-[11px]"
-        (click)="useSuggestion('Generate Report')"
-      >
-        📊 Generate Report
-      </button>
+    <!-- ══ QUICK ACTIONS (role-based FAQs) ══ -->
+    <div class="quick-actions-bar overflow-x-auto flex gap-2 px-3 py-2 border-t border-base-300 shrink-0">
+      @for (faq of faqs; track faq.label; let i = $index) {
+        <button
+          class="btn btn-xs btn-outline rounded-full whitespace-nowrap shrink-0 text-[11px] faq-pill"
+          [style.animation-delay]="(i * 60) + 'ms'"
+          (click)="useFaq(faq)"
+        >
+          {{ faq.icon }} {{ faq.label }}
+        </button>
+      }
     </div>
 
-    <!-- INPUT AREA -->
+    <!-- ══ INPUT AREA ══ -->
     <div class="flex items-end gap-2 px-3 py-3 bg-base-200 border-t border-base-300 shrink-0">
+
       <!-- Language mini picker -->
       <div class="dropdown dropdown-top shrink-0">
-        <button
-          tabindex="0"
-          class="btn btn-ghost btn-xs px-1.5 gap-1 text-[11px] font-semibold"
-          aria-label="Select language"
-        >
+        <button tabindex="0" class="btn btn-ghost btn-xs px-1.5 gap-1 text-[11px] font-semibold" aria-label="Select language">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/>
           </svg>
-          IN
+          {{ language.toUpperCase() }}
         </button>
-        <ul
-          tabindex="0"
-          class="dropdown-content menu bg-base-100 border border-base-300 rounded-box shadow-xl w-36 z-50 p-1 mb-1"
-        >
+        <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-300 rounded-box shadow-xl w-36 z-50 p-1 mb-1">
           @for (l of languages; track l.code) {
             <li>
-              <button
-                class="text-xs"
-                [class.text-primary]="language === l.code"
-                (click)="language = $any(l.code); onLanguageChange()"
-              >
-                {{ l.label }}
+              <button class="text-xs" [class.text-primary]="language === l.code"
+                (click)="language = $any(l.code); onLanguageChange()">
+                {{ l.flag }} {{ l.label }}
               </button>
             </li>
           }
@@ -429,6 +315,7 @@
         class="textarea textarea-bordered textarea-sm flex-1 resize-none min-h-[36px] max-h-[108px] text-sm leading-snug py-2"
         placeholder="Ask about stock, vehicles..."
         [(ngModel)]="inputText"
+        (ngModelChange)="onInputChange($event)"
         (keydown)="onEnterKey($event)"
         (focus)="isFocused = true"
         (blur)="isFocused = false"
@@ -439,45 +326,37 @@
       ></textarea>
 
       <!-- Voice button -->
-      <button
-        class="btn btn-ghost btn-circle btn-sm shrink-0 transition-colors"
-        [class.text-error]="isListening"
-        [class.voice-recording]="isListening"
-        (click)="toggleVoice()"
-        [attr.aria-label]="isListening ? 'Stop recording' : 'Voice input'"
-      >
-        @if (isListening) {
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
+      @if (voiceSupported) {
+        <div class="tooltip tooltip-top" [attr.data-tip]="voiceState === 'listening' ? 'Listening...' : voiceState === 'processing' ? 'Processing...' : 'Click to speak'">
+          <button
+            class="btn btn-ghost btn-circle btn-sm shrink-0 transition-colors"
+            [class.text-error]="isListening"
+            [class.voice-recording]="isListening"
+            [class.text-warning]="voiceState === 'processing'"
+            (click)="toggleVoice()"
+            [attr.aria-label]="isListening ? 'Stop recording' : 'Voice input'"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z"
-            />
-          </svg>
-        } @else {
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.75"
-              d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
-            />
-          </svg>
-        }
-      </button>
+            @if (voiceState === 'processing') {
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            } @else if (isListening) {
+              <!-- Stop icon when listening -->
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z"/>
+              </svg>
+            } @else {
+              <!-- Mic icon -->
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                  d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
+              </svg>
+            }
+          </button>
+        </div>
+      }
 
       <!-- Send button -->
       <button
@@ -487,52 +366,24 @@
         aria-label="Send message"
       >
         @if (isLoading) {
-          <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            ></path>
+          <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
           </svg>
         } @else {
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5"
-            />
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5"/>
           </svg>
         }
       </button>
     </div>
 
-    <!-- Footer -->
-    <div
-      class="hidden lg:block text-center py-1.5 text-[10px] text-base-content/20 bg-base-200 border-t border-base-300 shrink-0 select-none"
-    >
+    <!-- Footer (desktop only) -->
+    <div class="hidden lg:block text-center py-1.5 text-[10px] text-base-content/20 bg-base-200 border-t border-base-300 shrink-0 select-none">
       <span class="inline-flex items-center gap-1">
         <svg class="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M13 10V3L4 14h7v7l9-11h-7z"
-          />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
         </svg>
         Powered by AI · Supports 6 Indian Languages
       </span>
