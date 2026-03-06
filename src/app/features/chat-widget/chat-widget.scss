@@ -122,9 +122,11 @@
   }
 }
 
-// ── Quick Actions Bar — hide scrollbar ───────────────────────
+// ── Quick Actions Bar — hide scrollbar + right fade ──────────
 .quick-actions-bar {
   scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+  mask-image: linear-gradient(to right, black 80%, transparent 100%);
 }
 
 .quick-actions-bar::-webkit-scrollbar {

@@ -269,6 +269,10 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
     } catch {}
   }
 
+  isDesktop(): boolean {
+    return window.innerWidth >= 1024;
+  }
+
   onEnterKey(event: KeyboardEvent): void {
     // Mobile: never send on Enter (let user use send button)
     // Desktop: send on Enter, newline on Shift+Enter
