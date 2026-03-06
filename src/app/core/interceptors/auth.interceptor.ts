@@ -10,12 +10,14 @@ export const authInterceptor: HttpInterceptorFn = (
   const auth = inject(AuthService);
 
   const token = auth.getToken();
-  const authReq = token ? addToken(req, token) : req;
+  const isAuthEndpoint = req.url.includes('/api/v1/auth/');
+  const authReq = token && !isAuthEndpoint ? addToken(req, token) : req;
 
   return next(authReq).pipe(
     catchError((err: HttpErrorResponse) => {
-      // Only attempt refresh on 401 and when we have a refresh token
-      if (err.status === 401 && auth.getRefreshToken()) {
+      // Only attempt refresh on 401 for protected endpoints (never for auth routes)
+      const isAuthRoute = req.url.includes('/api/v1/auth/');
+      if (err.status === 401 && !isAuthRoute && auth.getRefreshToken()) {
         return auth.refreshToken().pipe(
           switchMap((res) => next(addToken(req, res.token))),
           catchError(() => {
