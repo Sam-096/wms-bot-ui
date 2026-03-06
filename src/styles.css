@@ -179,3 +179,18 @@ nav,
   transform: rotate(180deg);
   opacity: 0;
 }
+
+/* ── View Transition — theme ripple ──────────────────────── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Old view stays frozen while new one expands over it */
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 9999;
+}
