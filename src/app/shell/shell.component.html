@@ -24,11 +24,13 @@
     <!-- Scrollable page content -->
     <main
       id="main-content"
-      class="flex-1 overflow-y-auto bg-base-100 px-4 py-6 sm:px-6 lg:px-8"
+      class="flex-1 overflow-hidden bg-base-100"
       role="main"
       tabindex="-1"
     >
-      <router-outlet />
+      <div class="h-full" [class]="isChatRoute() ? 'overflow-hidden' : 'overflow-y-auto px-4 py-6 sm:px-6 lg:px-8'">
+        <router-outlet />
+      </div>
     </main>
   </div>
 
@@ -46,3 +48,6 @@
 
 <!-- Floating AI chat widget (always on top) -->
 <app-chat-widget />
+
+<!-- Global toast notifications -->
+<app-toast />

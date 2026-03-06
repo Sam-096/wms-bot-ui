@@ -1,0 +1,413 @@
+<!-- ══════════════════════════════════════════════════
+     Chat Workspace — 3-panel layout
+══════════════════════════════════════════════════ -->
+<div class="chat-workspace flex h-full bg-base-100 overflow-hidden">
+
+  <!-- ════════════════════════════════════════════
+       LEFT PANEL — Session History
+  ════════════════════════════════════════════ -->
+
+  <!-- Mobile overlay backdrop -->
+  @if (leftPanelOpen()) {
+    <div class="fixed inset-0 z-30 bg-black/40 lg:hidden" (click)="leftPanelOpen.set(false)"></div>
+  }
+
+  <aside
+    class="chat-left-panel flex flex-col shrink-0 bg-base-200 border-r border-base-300 z-40 transition-transform duration-300
+           fixed top-0 left-0 h-full w-64
+           lg:relative lg:translate-x-0 lg:block"
+    [class.-translate-x-full]="!leftPanelOpen()"
+    [class.translate-x-0]="leftPanelOpen()"
+    aria-label="Chat history"
+  >
+    <!-- New chat button + search -->
+    <div class="p-3 border-b border-base-300 shrink-0">
+      <button class="btn btn-primary btn-sm w-full gap-2 mb-2" (click)="newSession()">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/>
+        </svg>
+        New Chat
+      </button>
+      <label class="input input-bordered input-xs flex items-center gap-1 bg-base-100">
+        <svg class="w-3.5 h-3.5 text-base-content/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+        </svg>
+        <input class="grow bg-transparent text-xs outline-none" placeholder="Search sessions..."
+          [value]="sessionSearch()"
+          (input)="sessionSearch.set($any($event.target).value)"/>
+      </label>
+    </div>
+
+    <!-- Session list -->
+    <div class="flex-1 overflow-y-auto py-2">
+      @if (loadingSessions()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="px-3 py-2">
+            <div class="skeleton h-3 w-3/4 mb-1 rounded"></div>
+            <div class="skeleton h-2 w-1/2 rounded"></div>
+          </div>
+        }
+      } @else if (sessionGroups().length === 0) {
+        <div class="flex flex-col items-center justify-center h-32 gap-2 text-center px-4">
+          <svg class="w-8 h-8 text-base-content/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/>
+          </svg>
+          <p class="text-xs text-base-content/40">No chat history.<br>Start a new chat!</p>
+        </div>
+      } @else {
+        @for (group of sessionGroups(); track group.label) {
+          <p class="text-[10px] text-base-content/30 uppercase tracking-widest font-semibold px-4 py-1.5">
+            {{ group.label }}
+          </p>
+          @for (session of group.sessions; track trackBySessionId($index, session)) {
+            <div class="group relative">
+              <button
+                class="w-full text-left px-3 py-2 hover:bg-base-300 transition-colors border-l-2 mx-0"
+                [class.border-primary]="session.id === activeSessionId()"
+                [class.bg-primary/5]="session.id === activeSessionId()"
+                [class.border-transparent]="session.id !== activeSessionId()"
+                (click)="openSession(session.id)"
+              >
+                <p class="text-xs font-medium text-base-content truncate">{{ session.title }}</p>
+                @if (session.lastMessage) {
+                  <p class="text-[11px] text-base-content/40 truncate mt-0.5">{{ session.lastMessage }}</p>
+                }
+                <p class="text-[10px] text-base-content/25 mt-0.5">{{ session.createdAt | date:'MMM d' }}</p>
+              </button>
+              <!-- Delete btn -->
+              <button
+                class="absolute right-2 top-2 btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-error transition-opacity"
+                (click)="deleteSession(session.id)"
+                aria-label="Delete session"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                </svg>
+              </button>
+            </div>
+          }
+        }
+      }
+    </div>
+  </aside>
+
+  <!-- ════════════════════════════════════════════
+       CENTER PANEL — Main Chat Area
+  ════════════════════════════════════════════ -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 px-4 py-3 bg-base-200 border-b border-base-300 shrink-0">
+      <!-- Mobile: toggle left panel -->
+      <button class="btn btn-ghost btn-sm btn-square lg:hidden" (click)="leftPanelOpen.set(true)" aria-label="Open history">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/>
+        </svg>
+      </button>
+
+      <!-- Session title (click to edit) -->
+      @if (editingTitle()) {
+        <input
+          class="input input-sm input-bordered bg-base-100 flex-1 text-sm font-medium"
+          [value]="editTitleValue()"
+          (input)="editTitleValue.set($any($event.target).value)"
+          (blur)="saveTitle()"
+          (keyup.enter)="saveTitle()"
+          (keyup.escape)="editingTitle.set(false)"
+          autofocus
+        />
+      } @else {
+        <button class="text-sm font-semibold text-base-content hover:text-primary transition-colors truncate flex-1 text-left" (click)="startEditTitle()">
+          {{ activeSession()?.title ?? 'New Chat' }}
+        </button>
+      }
+
+      <!-- Language tabs -->
+      <div class="flex gap-0.5 bg-base-300 rounded-lg p-0.5 shrink-0">
+        @for (l of [['en','EN'],['te','తె'],['hi','हि'],['ta','த']] ; track l[0]) {
+          <button
+            class="px-2 py-1 rounded-md text-xs font-medium transition-colors"
+            [class.bg-base-100]="language === l[0]"
+            [class.text-primary]="language === l[0]"
+            [class.text-base-content/50]="language !== l[0]"
+            (click)="language = $any(l[0])"
+          >{{ l[1] }}</button>
+        }
+      </div>
+
+      <!-- Right panel toggle -->
+      <button
+        class="btn btn-ghost btn-sm btn-square hidden xl:flex"
+        (click)="rightPanelOpen.set(!rightPanelOpen())"
+        [attr.aria-label]="rightPanelOpen() ? 'Collapse context panel' : 'Expand context panel'"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 4.5v15m6-15v15M3 8.25h18M3 15.75h18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Messages area -->
+    <div class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+
+      <!-- Welcome screen (no messages) -->
+      @if (messages().length === 0) {
+        <div class="flex-1 flex flex-col items-center justify-center py-8 gap-4">
+          <div class="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9.75 3.75a.75.75 0 011.5 0v.75h1.5v-.75a.75.75 0 011.5 0v.75H15A2.25 2.25 0 0117.25 6.75v1.5A2.25 2.25 0 0115 10.5H9A2.25 2.25 0 016.75 8.25v-1.5A2.25 2.25 0 019 4.5h.75v-.75zM6.75 12h10.5M9 15.75h.008M15 15.75h.008M6.75 19.5A2.25 2.25 0 009 21.75h6a2.25 2.25 0 002.25-2.25V12H6.75v7.5z"/>
+            </svg>
+          </div>
+          <div class="text-center">
+            <h3 class="text-lg font-bold text-base-content">
+              @switch (language) {
+                @case ('te') { నమస్కారం! నేను WMS Bot 🤖 }
+                @case ('hi') { नमस्ते! मैं WMS Bot हूँ 🤖 }
+                @case ('ta') { வணக்கம்! நான் WMS Bot 🤖 }
+                @default     { Hello! I'm WMS Bot 🤖 }
+              }
+            </h3>
+            <p class="text-sm text-base-content/50 mt-1">Ask me anything about your warehouse</p>
+          </div>
+          <app-faq-grid [role]="appRole()" (send)="sendFaq($event)" class="w-full max-w-lg" />
+        </div>
+      }
+
+      <!-- Message list -->
+      @for (msg of messages(); track trackById($index, msg); let i = $index) {
+
+        @if (showDateSeparator(i)) {
+          <div class="flex items-center gap-3 my-1">
+            <div class="flex-1 h-px bg-base-300"></div>
+            <span class="text-[11px] text-base-content/30 font-medium shrink-0">{{ formatDate(msg.sessionDate) }}</span>
+            <div class="flex-1 h-px bg-base-300"></div>
+          </div>
+        }
+
+        <!-- USER message -->
+        @if (msg.role === 'user') {
+          <div class="flex flex-col items-end gap-1">
+            <div class="bg-primary text-primary-content px-4 py-2.5 rounded-2xl rounded-br-sm max-w-[75%] text-sm leading-relaxed break-words shadow-sm">
+              {{ msg.text }}
+            </div>
+            <span class="text-[10px] text-base-content/30 pr-1">{{ msg.timestamp | date:'h:mm a' }}</span>
+          </div>
+        }
+
+        <!-- BOT message -->
+        @if (msg.role === 'bot') {
+          <div class="flex items-end gap-2">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary shrink-0 flex items-center justify-center text-white text-xs font-bold mb-1">
+              AI
+            </div>
+            <div class="flex flex-col gap-1 max-w-[75%]">
+              <div class="relative group">
+                <div class="bg-base-200 border border-base-300 text-base-content px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed break-words shadow-sm">
+                  @if (msg.isLoading && !msg.text) {
+                    <div class="flex gap-1.5 items-center py-0.5 h-5">
+                      <span class="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+                      <span class="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+                      <span class="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+                    </div>
+                  } @else {
+                    {{ msg.text }}
+                    @if (msg.isLoading) { <span class="text-primary animate-pulse ml-0.5">▋</span> }
+                  }
+                </div>
+                <!-- Copy on hover -->
+                @if (!msg.isLoading && msg.text) {
+                  <button
+                    class="absolute -top-2 -right-2 btn btn-circle btn-xs bg-base-100 border border-base-300 shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                    (click)="copyMessage(msg)" aria-label="Copy">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                  </button>
+                }
+              </div>
+
+              <div class="flex items-center gap-2 pl-1">
+                <span class="text-[10px] text-base-content/30">{{ msg.timestamp | date:'h:mm a' }}</span>
+
+                <!-- Reactions -->
+                @if (!msg.isLoading && msg.text) {
+                  @if (msg.reactionDone) {
+                    <span class="text-[10px] text-success">Thanks 🙏</span>
+                  } @else if (msg.reaction == null) {
+                    <button class="text-sm opacity-40 hover:opacity-100 hover:scale-125 transition-all" (click)="react(msg, true)" aria-label="Helpful">👍</button>
+                    <button class="text-sm opacity-40 hover:opacity-100 hover:scale-125 transition-all" (click)="react(msg, false)" aria-label="Not helpful">👎</button>
+                  } @else {
+                    <span class="text-[10px] text-base-content/30">{{ msg.reaction === 'up' ? '👍 Glad to help!' : '👎 Will improve!' }}</span>
+                  }
+                }
+              </div>
+
+              <!-- Suggestions -->
+              @if (!msg.isLoading && msg.suggestions?.length) {
+                <div class="flex flex-wrap gap-1.5 mt-0.5">
+                  @for (s of msg.suggestions; track s) {
+                    <button
+                      class="btn btn-xs btn-ghost border border-base-300 rounded-full text-[11px] hover:border-primary hover:text-primary transition-colors"
+                      (click)="useSuggestion(s)">
+                      {{ s }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      <div #messagesEnd></div>
+    </div>
+
+    <!-- Input area -->
+    <div class="shrink-0 border-t border-base-300 bg-base-200 px-4 py-3">
+      <div class="flex items-end gap-2 bg-base-100 border border-base-300 rounded-2xl px-3 py-2">
+        <!-- Voice -->
+        @if (voiceSupported) {
+          <button
+            class="btn btn-ghost btn-circle btn-sm shrink-0 self-end mb-0.5 transition-colors"
+            [class.text-error]="voiceState === 'listening'"
+            [class.voice-pulse]="voiceState === 'listening'"
+            [class.text-warning]="voiceState === 'processing'"
+            (click)="toggleVoice()"
+            [attr.aria-label]="voiceState === 'listening' ? 'Stop recording' : 'Start voice input'"
+          >
+            @if (voiceState === 'processing') {
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            } @else if (voiceState === 'listening') {
+              <span class="text-xs font-mono text-error">{{ formatDuration(voiceDuration) }}</span>
+            } @else {
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                  d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
+              </svg>
+            }
+          </button>
+        }
+
+        <!-- Textarea -->
+        <div class="flex-1 relative">
+          <textarea
+            #inputField
+            class="w-full bg-transparent outline-none resize-none text-sm leading-relaxed py-1 max-h-[144px]"
+            placeholder="Ask about stock, vehicles, reports..."
+            [(ngModel)]="inputText"
+            (keydown)="onEnterKey($event)"
+            [disabled]="isLoading()"
+            rows="1"
+            maxlength="500"
+            style="field-sizing: content;"
+            aria-label="Message input"
+          ></textarea>
+          @if (showCount()) {
+            <span class="absolute bottom-0 right-0 text-[10px] text-base-content/30">{{ charCount() }}/500</span>
+          }
+        </div>
+
+        <!-- Send -->
+        <button
+          class="btn btn-primary btn-circle btn-sm shrink-0 self-end mb-0.5 active:scale-90 transition-transform"
+          [disabled]="isLoading() || !inputText.trim()"
+          (click)="send()"
+          aria-label="Send"
+        >
+          @if (isLoading()) {
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          } @else {
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5"/>
+            </svg>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       RIGHT PANEL — Context / Snapshot
+  ════════════════════════════════════════════ -->
+  @if (rightPanelOpen()) {
+    <aside class="chat-right-panel shrink-0 w-72 bg-base-200 border-l border-base-300 flex-col hidden xl:flex overflow-y-auto">
+      <div class="p-4 border-b border-base-300 flex items-center justify-between shrink-0">
+        <p class="text-xs font-semibold text-base-content/50 uppercase tracking-widest">Warehouse Snapshot</p>
+        <button class="btn btn-ghost btn-xs btn-circle" (click)="rightPanelOpen.set(false)" aria-label="Collapse">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      @if (snapshot(); as snap) {
+        <div class="flex flex-col gap-2 p-3">
+
+          <!-- Stock Health -->
+          <button class="snap-metric-card group" (click)="sendSnapshotQuery('stock')">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs text-base-content/60">📦 Stock Health</span>
+              <span class="text-sm font-bold" [class.text-success]="snap.stockHealth >= 70" [class.text-warning]="snap.stockHealth >= 40 && snap.stockHealth < 70" [class.text-error]="snap.stockHealth < 40">{{ snap.stockHealth }}%</span>
+            </div>
+            <progress class="progress w-full h-1.5" [class.progress-success]="snap.stockHealth >= 70" [class.progress-warning]="snap.stockHealth < 70" [value]="snap.stockHealth" max="100"></progress>
+          </button>
+
+          <!-- Active Vehicles -->
+          <button class="snap-metric-card group" (click)="sendSnapshotQuery('vehicles')">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-base-content/60">🚛 Active Vehicles</span>
+              <span class="text-sm font-bold text-info">{{ snap.activeVehicles }}</span>
+            </div>
+          </button>
+
+          <!-- Pending Inward -->
+          <button class="snap-metric-card group" (click)="sendSnapshotQuery('inward')">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-base-content/60">📥 Pending Inward</span>
+              <span class="text-sm font-bold text-warning">{{ snap.pendingInward }}</span>
+            </div>
+          </button>
+
+          <!-- Pending Outward -->
+          <button class="snap-metric-card group" (click)="sendSnapshotQuery('outward')">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-base-content/60">📤 Pending Outward</span>
+              <span class="text-sm font-bold text-warning">{{ snap.pendingOutward }}</span>
+            </div>
+          </button>
+
+          <!-- Low Stock -->
+          <button class="snap-metric-card group" (click)="sendSnapshotQuery('lowstock')">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-base-content/60">⚠️ Low Stock Items</span>
+              <span class="text-sm font-bold" [class.text-error]="snap.lowStockItems > 0" [class.text-success]="snap.lowStockItems === 0">{{ snap.lowStockItems }}</span>
+            </div>
+          </button>
+
+          <!-- Active Bonds -->
+          <button class="snap-metric-card group" (click)="sendSnapshotQuery('bonds')">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-base-content/60">🔒 Active Bonds</span>
+              <span class="text-sm font-bold text-primary">{{ snap.activeBonds }}</span>
+            </div>
+          </button>
+
+          <p class="text-[10px] text-base-content/20 text-center mt-2">Click any metric to ask AI</p>
+        </div>
+      } @else {
+        <div class="p-4 flex flex-col gap-2">
+          @for (i of [1,2,3,4,5,6]; track i) {
+            <div class="skeleton h-10 w-full rounded-lg"></div>
+          }
+        </div>
+      }
+    </aside>
+  }
+</div>

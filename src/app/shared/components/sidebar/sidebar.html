@@ -35,7 +35,7 @@
   </p>
 
   <ul class="flex flex-col gap-0.5" role="list">
-    @for (item of navItems; track item.route) {
+    @for (item of navItems(); track item.route) {
       <li role="listitem">
         <a
           class="nav-link"
@@ -150,6 +150,11 @@
                   />
                 </svg>
               }
+              @case ('chat') {
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+                </svg>
+              }
               @case ('reports') {
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -227,11 +232,11 @@
     class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors cursor-pointer group"
   >
     <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
-      <span class="text-xs font-bold text-primary-content">WM</span>
+      <span class="text-xs font-bold text-primary-content">{{ initials() }}</span>
     </div>
     <div class="flex-1 min-w-0">
-      <p class="text-sm font-semibold text-base-content leading-tight truncate">WMS Admin</p>
-      <p class="text-xs text-base-content/40 leading-tight truncate">Warehouse Manager</p>
+      <p class="text-sm font-semibold text-base-content leading-tight truncate">{{ displayName() }}</p>
+      <p class="text-xs text-base-content/40 leading-tight truncate">{{ displayRole() }}</p>
     </div>
     <button
       class="btn btn-ghost btn-xs btn-square opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"

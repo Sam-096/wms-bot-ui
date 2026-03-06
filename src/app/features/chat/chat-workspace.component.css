@@ -1,0 +1,46 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-workspace {
+  height: 100%;
+}
+
+/* Left panel: on mobile it's a fixed off-canvas drawer */
+.chat-left-panel {
+  transition: transform 0.25s ease;
+}
+
+/* Right panel snapshot metric cards */
+.snap-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.625rem;
+  background-color: var(--color-base-300);
+  border: 1px solid transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.snap-metric-card:hover {
+  border-color: color-mix(in oklch, var(--color-primary) 30%, transparent);
+  background-color: color-mix(in oklch, var(--color-primary) 5%, var(--color-base-300));
+}
+
+/* Voice pulse animation on recording button */
+.voice-pulse {
+  animation: voice-ring 1.5s ease-out infinite;
+}
+
+@keyframes voice-ring {
+  0%   { box-shadow: 0 0 0 0   color-mix(in oklch, var(--color-error) 60%, transparent); }
+  70%  { box-shadow: 0 0 0 8px color-mix(in oklch, var(--color-error) 0%,  transparent); }
+  100% { box-shadow: 0 0 0 0   transparent; }
+}
