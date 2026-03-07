@@ -2,18 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 export type Language = 'te' | 'hi' | 'en' | 'ta' | 'kn' | 'mr';
-export type UserRole = 'driver' | 'gatekeeper' | 'manager' | 'admin';
-
-export interface BotRequestPayload {
-  message: string;
-  language: Language;
-  role: UserRole;
-  warehouseName: string;
-  currentScreen?: string;
-  contextData?: string;
-}
+export type UserRole  = 'driver' | 'gatekeeper' | 'manager' | 'admin';
 
 export interface QuickAction {
   label: string;
@@ -26,48 +18,40 @@ export interface ParsedBotResponse {
   actions: QuickAction[];
 }
 
+function assembleSSE(raw: string): string {
+  return raw
+    .split('\n')
+    .filter((line) => line.startsWith('data:'))
+    .map((line) => line.substring(5).trim())
+    .filter((token) => token.length > 0 && token !== '[DONE]')
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 @Injectable({ providedIn: 'root' })
 export class BotService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/api/bot`;
+  private readonly auth = inject(AuthService);
+  private readonly chatUrl = `${environment.apiUrl}/api/v1/chat`;
 
   sendMessage(
     message: string,
-    language: Language,
-    role: UserRole,
-    warehouseName: string,
-    currentScreen?: string,
-    contextData?: string,
+    language: Language = 'en',
+    _role?: UserRole,
+    _warehouseName?: string,
   ): Observable<string> {
+    const userId = this.auth.getUserId();
     return this.http
-      .post(
-        `${this.apiUrl}/chat`,
-        { message, language, role, warehouseName, currentScreen, contextData },
-        { responseType: 'text' },
-      )
-      .pipe(
-        map((raw: string) =>
-          raw
-            .split('\n')
-            .filter((line) => line.startsWith('data:'))
-            .map((line) => line.substring(5).trim())
-            .filter((token) => token.length > 0 && token !== '[DONE]')
-            .join(''),
-        ),
-      );
+      .post(this.chatUrl, { message, userId, language }, { responseType: 'text' })
+      .pipe(map(assembleSSE));
   }
 
-  chat(payload: BotRequestPayload): Observable<string> {
-    return this.http.post(`${this.apiUrl}/chat`, payload, { responseType: 'text' }).pipe(
-      map((raw: string) =>
-        raw
-          .split('\n')
-          .filter((line) => line.startsWith('data:'))
-          .map((line) => line.substring(5).trim())
-          .filter((token) => token.length > 0 && token !== '[DONE]')
-          .join(''),
-      ),
-    );
+  chat(payload: { message: string; language?: Language; [k: string]: unknown }): Observable<string> {
+    const userId = this.auth.getUserId();
+    return this.http
+      .post(this.chatUrl, { ...payload, userId }, { responseType: 'text' })
+      .pipe(map(assembleSSE));
   }
 
   parseResponse(raw: string): ParsedBotResponse {

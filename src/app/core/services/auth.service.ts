@@ -85,6 +85,10 @@ export class AuthService {
     return !!user && roles.includes(user.role);
   }
 
+  getUserId(): string | null {
+    return this.getCurrentUser()?.userId ?? null;
+  }
+
   getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
   }

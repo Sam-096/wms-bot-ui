@@ -46,8 +46,10 @@
   </div>
 </div>
 
-<!-- Floating AI chat widget (always on top) -->
-<app-chat-widget />
+<!-- Floating AI chat widget — hidden on /chat (full workspace replaces it) -->
+@if (!isChatRoute()) {
+  <app-chat-widget />
+}
 
 <!-- Global toast notifications -->
 <app-toast />

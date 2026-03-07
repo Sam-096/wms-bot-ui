@@ -3,25 +3,26 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, of, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ChatSession, WorkspaceChatMessage, ChatFeedbackRequest } from '../models/chat-workspace.model';
-import { Language, UserRole } from '../models/chat-message.model';
+import { Language } from '../services/bot';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class ChatWorkspaceService {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
   private readonly base = `${environment.apiUrl}/api/v1/chat`;
 
-  /** Send a message and get back the full response text (non-streaming). */
+  /** Send a message via the unified chat endpoint. */
   sendMessage(
     message: string,
     language: Language,
-    role: UserRole,
-    warehouseName: string,
     sessionId: string,
   ): Observable<string> {
+    const userId = this.auth.getUserId();
     return this.http
       .post(
-        `${environment.apiUrl}/api/bot/chat`,
-        { message, language, role, warehouseName, sessionId },
+        this.base,
+        { message, userId, language, sessionId },
         { responseType: 'text' },
       )
       .pipe(
@@ -31,7 +32,9 @@ export class ChatWorkspaceService {
             .filter((l) => l.startsWith('data:'))
             .map((l) => l.substring(5).trim())
             .filter((t) => t.length > 0 && t !== '[DONE]')
-            .join(''),
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim(),
         ),
         catchError(() => of('⚠️ Connection error. Please try again.')),
       );

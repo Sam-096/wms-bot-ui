@@ -10,6 +10,6 @@ export function roleGuard(allowedRoles: AppRole[]): CanActivateFn {
     const router = inject(Router);
 
     if (auth.hasRole(...allowedRoles)) return true;
-    return router.createUrlTree(['/dashboard']);
+    return router.createUrlTree(['/unauthorized']);
   };
 }

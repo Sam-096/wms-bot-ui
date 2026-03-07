@@ -1,0 +1,65 @@
+<!-- Plain markdown / text -->
+@if (view().type === 'text') {
+  <div
+    [innerHTML]="safeHtml"
+    class="text-sm leading-relaxed
+      [&>h1]:text-lg [&>h1]:font-bold [&>h1]:mb-2
+      [&>h2]:text-base [&>h2]:font-semibold [&>h2]:mb-1
+      [&>h3]:font-semibold [&>h3]:mb-1
+      [&>p]:mb-2 last:[&>p]:mb-0
+      [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:mb-2
+      [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:mb-2
+      [&>li]:mb-0.5
+      [&>pre]:bg-base-300 [&>pre]:p-3 [&>pre]:rounded-lg [&>pre]:overflow-x-auto [&>pre]:mb-2 [&>pre]:text-xs
+      [&>code]:font-mono [&>code]:text-xs [&>code]:bg-base-300 [&>code]:px-1 [&>code]:rounded
+      [&>blockquote]:border-l-2 [&>blockquote]:border-primary [&>blockquote]:pl-3 [&>blockquote]:italic [&>blockquote]:text-base-content/70
+      [&>a]:text-primary [&>a]:underline"
+  ></div>
+}
+
+<!-- Navigation / action chips -->
+@if (view().type === 'actions') {
+  <div class="space-y-3">
+    <p class="text-sm text-base-content/80">{{ message }}</p>
+    <div class="flex flex-wrap gap-2">
+      @for (a of actions; track a.route) {
+        <button
+          (click)="navigate(a.route)"
+          class="btn btn-sm btn-outline btn-primary"
+        >
+          {{ a.label }}
+        </button>
+      }
+    </div>
+  </div>
+}
+
+<!-- Access denied -->
+@if (view().type === 'denied') {
+  <div class="rounded-lg border border-error/30 bg-error/10 p-3 space-y-2">
+    <div class="flex items-center gap-2 text-error">
+      <span aria-hidden="true">🔒</span>
+      <p class="text-sm font-medium">{{ message }}</p>
+    </div>
+    @if (actions.length) {
+      <div class="flex flex-wrap gap-2">
+        @for (a of actions; track a.route) {
+          <button
+            (click)="navigate(a.route)"
+            class="btn btn-xs btn-ghost text-error"
+          >
+            {{ a.label }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- Structured data -->
+@if (view().type === 'data') {
+  <div class="space-y-2">
+    <p class="text-sm text-base-content/80">{{ message }}</p>
+    <pre class="rounded-lg bg-base-300 p-3 text-xs overflow-x-auto max-h-60">{{ data | json }}</pre>
+  </div>
+}

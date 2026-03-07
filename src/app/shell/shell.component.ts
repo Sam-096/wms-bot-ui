@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   inject,
   signal,
 } from '@angular/core';
@@ -9,6 +10,7 @@ import { ToastComponent } from '../shared/components/toast/toast.component';
 import { ChatWidgetComponent } from '../features/chat-widget/chat-widget';
 import { SidebarComponent } from '../shared/components/sidebar/sidebar';
 import { TopbarComponent } from '../shared/components/topbar/topbar';
+import { TokenRefreshService } from '../core/services/token-refresh.service';
 
 @Component({
   selector: 'app-shell',
@@ -17,9 +19,14 @@ import { TopbarComponent } from '../shared/components/topbar/topbar';
   templateUrl: './shell.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ShellComponent {
-  readonly drawerOpen = signal(false);
-  private readonly router = inject(Router);
+export class ShellComponent implements OnInit {
+  readonly drawerOpen   = signal(false);
+  private readonly router       = inject(Router);
+  private readonly tokenRefresh = inject(TokenRefreshService);
+
+  ngOnInit(): void {
+    this.tokenRefresh.start();
+  }
 
   isChatRoute(): boolean {
     return this.router.url.startsWith('/chat');

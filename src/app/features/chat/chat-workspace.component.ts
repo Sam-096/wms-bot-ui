@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
 import { ChatWorkspaceService } from '../../core/services/chat-workspace.service';
@@ -50,8 +50,7 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   private readonly snapSvc     = inject(DashboardSnapshotService);
   private readonly suggestSvc  = inject(SuggestionEngineService);
   private readonly voiceSvc    = inject(VoiceInputService);
-  private readonly destroy$    = new Subject<void>();
-  private readonly inputChange$ = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
   // ── Auth context ─────────────────────────────────────────
   readonly user = this.auth.getCurrentUser();
@@ -274,7 +273,7 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
     this.isLoading.set(true);
 
     this.chatSvc
-      .sendMessage(text, this.language, this.chatRole, this.warehouseName, sessionId)
+      .sendMessage(text, this.language, sessionId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (token) => {
