@@ -7,7 +7,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -23,6 +23,7 @@ export class LoginComponent {
   private readonly auth    = inject(AuthService);
   private readonly toast   = inject(ToastService);
   private readonly router  = inject(Router);
+  private readonly route   = inject(ActivatedRoute);
 
   readonly showPassword = signal(false);
   readonly loading      = signal(false);
@@ -42,7 +43,8 @@ export class LoginComponent {
     this.auth.login(this.email.value!, this.password.value!).subscribe({
       next: () => {
         this.toast.success('Welcome back! Redirecting...');
-        this.router.navigate(['/dashboard']);
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
+        this.router.navigateByUrl(returnUrl);
       },
       error: (err) => {
         this.loading.set(false);

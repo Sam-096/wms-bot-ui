@@ -68,7 +68,33 @@ export class AuthService {
 
   // ── Helpers ───────────────────────────────────────────────────
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return !!this.getToken() && !this.isTokenExpired();
+  }
+
+  /** True when the JWT exp claim is in the past (or token is absent/malformed). */
+  isTokenExpired(): boolean {
+    const token = this.getToken();
+    if (!token) return true;
+    const payload = this.decodeJwt(token);
+    if (!payload?.['exp']) return true;
+    return Date.now() >= (payload['exp'] as number) * 1000;
+  }
+
+  /** Role decoded from the JWT payload (claim key: "role"). */
+  getUserRole(): AppRole | null {
+    const token = this.getToken();
+    if (!token) return null;
+    const payload = this.decodeJwt(token);
+    return (payload?.['role'] as AppRole) ?? this.getCurrentUser()?.role ?? null;
+  }
+
+  private decodeJwt(token: string): Record<string, unknown> | null {
+    try {
+      const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(base64)) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
   }
 
   getCurrentUser(): User | null {
