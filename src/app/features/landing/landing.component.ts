@@ -54,7 +54,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   goToDashboard(): void {
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/login']);
   }
 
   private initGsap(): void {
@@ -63,32 +63,56 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
       gsap.registerPlugin(ScrollTrigger);
 
       gsap.from('.hero-word', {
-        y: 40, opacity: 0, stagger: 0.08,
-        duration: 0.7, ease: 'power3.out', delay: 0.15,
+        y: 40,
+        opacity: 0,
+        stagger: 0.08,
+        duration: 0.7,
+        ease: 'power3.out',
+        delay: 0.15,
       });
 
       gsap.from('.hero-card', {
-        x: 60, opacity: 0, stagger: 0.12,
-        duration: 0.8, ease: 'power2.out', delay: 0.35,
+        x: 60,
+        opacity: 0,
+        stagger: 0.12,
+        duration: 0.8,
+        ease: 'power2.out',
+        delay: 0.35,
       });
 
       gsap.from('.feature-card', {
-        y: 30, opacity: 0, stagger: 0.09, duration: 0.55, ease: 'power2.out',
+        y: 30,
+        opacity: 0,
+        stagger: 0.09,
+        duration: 0.55,
+        ease: 'power2.out',
         scrollTrigger: { trigger: '.features-grid', start: 'top 82%' },
       });
 
       gsap.from('.step-item', {
-        x: -30, opacity: 0, stagger: 0.18, duration: 0.55, ease: 'power2.out',
+        x: -30,
+        opacity: 0,
+        stagger: 0.18,
+        duration: 0.55,
+        ease: 'power2.out',
         scrollTrigger: { trigger: '.steps-row', start: 'top 80%' },
       });
 
       gsap.from('.pricing-card', {
-        y: 40, opacity: 0, stagger: 0.14, duration: 0.6, ease: 'power2.out',
+        y: 40,
+        opacity: 0,
+        stagger: 0.14,
+        duration: 0.6,
+        ease: 'power2.out',
         scrollTrigger: { trigger: '.pricing-grid', start: 'top 80%' },
       });
 
       gsap.from('.testimonial-card', {
-        y: 30, opacity: 0, stagger: 0.12, duration: 0.5, ease: 'power2.out',
+        y: 30,
+        opacity: 0,
+        stagger: 0.12,
+        duration: 0.5,
+        ease: 'power2.out',
         scrollTrigger: { trigger: '.testimonials-grid', start: 'top 82%' },
       });
     } catch {}
@@ -101,10 +125,10 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.statsObserver = new IntersectionObserver(
       (entries) => {
         if (!entries[0].isIntersecting) return;
-        this.countTo('.stat-bags',     50000, '+',    0, 1600);
-        this.countTo('.stat-uptime',   99.8,  '%',    1, 1400);
-        this.countTo('.stat-response', 3,     ' sec', 0, 900);
-        this.countTo('.stat-langs',    4,     '',     0, 700);
+        this.countTo('.stat-bags', 50000, '+', 0, 1600);
+        this.countTo('.stat-uptime', 99.8, '%', 1, 1400);
+        this.countTo('.stat-response', 3, ' sec', 0, 900);
+        this.countTo('.stat-langs', 4, '', 0, 700);
         this.statsObserver?.disconnect();
       },
       { threshold: 0.4 },
@@ -112,10 +136,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.statsObserver.observe(bar);
   }
 
-  private countTo(
-    sel: string, target: number,
-    suffix: string, dec: number, ms: number,
-  ): void {
+  private countTo(sel: string, target: number, suffix: string, dec: number, ms: number): void {
     const el = document.querySelector(sel);
     if (!el) return;
     const start = performance.now();
@@ -123,8 +144,7 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
       const p = Math.min((now - start) / ms, 1);
       const eased = 1 - Math.pow(1 - p, 3);
       const v = eased * target;
-      el.textContent =
-        (dec > 0 ? v.toFixed(dec) : Math.round(v).toLocaleString('en-IN')) + suffix;
+      el.textContent = (dec > 0 ? v.toFixed(dec) : Math.round(v).toLocaleString('en-IN')) + suffix;
       if (p < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
