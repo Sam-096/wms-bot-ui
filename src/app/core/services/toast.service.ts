@@ -1,29 +1,72 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+export interface ToastAction {
+  label: string;
+  callback: () => void;
+}
 
 export interface Toast {
   id: string;
   type: ToastType;
+  title: string;
   message: string;
+  duration: number; // ms — 0 means never auto-dismiss
+  errorCode?: string;
+  action?: ToastAction;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ToastService {
-  readonly toasts = signal<Toast[]>([]);
+  // Timer refs stored to prevent LEAK 5 — clears on dismiss/dismissAll
+  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  show(message: string, type: ToastType = 'info', durationMs = 3500): void {
-    const id = crypto.randomUUID();
-    this.toasts.update((list) => [...list, { id, type, message }]);
-    setTimeout(() => this.dismiss(id), durationMs);
+  private readonly toastsSubject = new BehaviorSubject<Toast[]>([]);
+  readonly toasts$: Observable<Toast[]> = this.toastsSubject.asObservable();
+
+  success(title: string, message: string, duration = 3000): void {
+    this.add({ id: crypto.randomUUID(), type: 'success', title, message, duration });
   }
 
-  success(message: string): void { this.show(message, 'success'); }
-  error(message: string): void   { this.show(message, 'error', 5000); }
-  info(message: string): void    { this.show(message, 'info'); }
-  warning(message: string): void { this.show(message, 'warning'); }
+  error(title: string, message: string, duration = 5000, errorCode?: string): void {
+    this.add({ id: crypto.randomUUID(), type: 'error', title, message, duration, errorCode });
+  }
+
+  warning(title: string, message: string, duration = 4000): void {
+    this.add({ id: crypto.randomUUID(), type: 'warning', title, message, duration });
+  }
+
+  info(title: string, message: string, duration = 3000): void {
+    this.add({ id: crypto.randomUUID(), type: 'info', title, message, duration });
+  }
 
   dismiss(id: string): void {
-    this.toasts.update((list) => list.filter((t) => t.id !== id));
+    clearTimeout(this.timers.get(id));
+    this.timers.delete(id);
+    this.toastsSubject.next(this.toastsSubject.value.filter((t) => t.id !== id));
+  }
+
+  dismissAll(): void {
+    this.timers.forEach((t) => clearTimeout(t));
+    this.timers.clear();
+    this.toastsSubject.next([]);
+  }
+
+  private schedule(id: string, duration: number): void {
+    if (duration > 0) {
+      const timer = setTimeout(() => this.dismiss(id), duration);
+      this.timers.set(id, timer);
+    }
+  }
+
+  // Max 5 toasts — evict oldest to prevent stacking
+  private add(toast: Toast): void {
+    const current = this.toastsSubject.value;
+    const updated =
+      current.length >= 5 ? [...current.slice(1), toast] : [...current, toast];
+    this.toastsSubject.next(updated);
+    this.schedule(toast.id, toast.duration);
   }
 }

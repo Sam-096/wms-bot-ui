@@ -58,12 +58,21 @@ export class AuthService {
     return this.http.get<Warehouse[]>(`${environment.apiUrl}/api/v1/warehouses`);
   }
 
-  // ── Logout ───────────────────────────────────────────────────
+  // ── Logout (with navigation) ─────────────────────────────────
   logout(): void {
+    this.clearSession();
+    this.router.navigate(['/login']);
+  }
+
+  /**
+   * Clear tokens from storage WITHOUT navigating.
+   * Use this instead of logout() in app.ts ngOnInit to avoid
+   * double-navigation when authGuard also redirects.
+   */
+  clearSession(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(USER_KEY);
-    this.router.navigate(['/login']);
   }
 
   // ── Helpers ───────────────────────────────────────────────────
@@ -86,6 +95,18 @@ export class AuthService {
     if (!token) return null;
     const payload = this.decodeJwt(token);
     return (payload?.['role'] as AppRole) ?? this.getCurrentUser()?.role ?? null;
+  }
+
+  /**
+   * Returns the default landing route for a given role.
+   * Used by login component and noAuthGuard redirect.
+   */
+  getDefaultRouteForRole(role: AppRole): string {
+    switch (role) {
+      case 'OPERATOR':   return '/inward';
+      case 'GATE_STAFF': return '/gate-pass';
+      default:           return '/dashboard'; // ADMIN, MANAGER, VIEWER
+    }
   }
 
   private decodeJwt(token: string): Record<string, unknown> | null {
@@ -113,6 +134,10 @@ export class AuthService {
 
   getUserId(): string | null {
     return this.getCurrentUser()?.userId ?? null;
+  }
+
+  getWarehouseId(): string | null {
+    return this.getCurrentUser()?.warehouseId ?? null;
   }
 
   getToken(): string | null {

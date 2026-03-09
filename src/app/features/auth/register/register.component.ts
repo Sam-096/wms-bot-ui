@@ -110,15 +110,15 @@ export class RegisterComponent implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.toast.success('Account created! Welcome to Godown AI 🎉');
+          this.toast.success('Account Created', 'Welcome to Godown AI!');
           this.router.navigate(['/dashboard']);
         },
         error: (err) => {
           this.loading.set(false);
           if (err?.status === 409) {
-            this.toast.error('Email already registered. Please login.');
+            this.toast.error('Already Registered', 'Email already registered. Please login.');
           } else {
-            this.toast.error('Registration failed. Please try again.');
+            this.toast.error('Registration Failed', 'Please try again.');
           }
         },
       });

@@ -1,15 +1,18 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { Router, ActivatedRoute } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { RealtimeService } from '../../../core/services/realtime.service';
 
 @Component({
   selector: 'app-login',
@@ -19,11 +22,13 @@ import { ToastService } from '../../../core/services/toast.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
-  private readonly fb      = inject(FormBuilder);
-  private readonly auth    = inject(AuthService);
-  private readonly toast   = inject(ToastService);
-  private readonly router  = inject(Router);
-  private readonly route   = inject(ActivatedRoute);
+  private readonly fb         = inject(FormBuilder);
+  private readonly auth       = inject(AuthService);
+  private readonly toast      = inject(ToastService);
+  private readonly router     = inject(Router);
+  private readonly route      = inject(ActivatedRoute);
+  private readonly realtime   = inject(RealtimeService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly showPassword = signal(false);
   readonly loading      = signal(false);
@@ -40,21 +45,29 @@ export class LoginComponent {
     if (this.form.invalid || this.loading()) return;
     this.loading.set(true);
 
-    this.auth.login(this.email.value!, this.password.value!).subscribe({
-      next: () => {
-        this.toast.success('Welcome back! Redirecting...');
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
-        this.router.navigateByUrl(returnUrl);
-      },
-      error: (err) => {
-        this.loading.set(false);
-        const status = err?.status;
-        if (status === 401 || status === 400) {
-          this.toast.error('Invalid email or password');
-        } else {
-          this.toast.error('Server error. Please try again.');
-        }
-      },
-    });
+    this.auth.login(this.email.value!, this.password.value!)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          const { user } = res;
+          this.toast.success('Welcome Back', `Good to see you, ${user.username}!`);
+
+          // Connect real-time warehouse events for the session
+          this.realtime.connect(user.warehouseId);
+
+          // Navigate to returnUrl if present, else role-appropriate default
+          const returnUrl    = this.route.snapshot.queryParamMap.get('returnUrl');
+          const defaultRoute = this.auth.getDefaultRouteForRole(user.role);
+          void this.router.navigateByUrl(returnUrl ?? defaultRoute);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading.set(false);
+          if (err.status === 401 || err.status === 400) {
+            this.toast.error('Login Failed', 'Invalid email or password.');
+          } else {
+            this.toast.error('Server Error', 'Please try again.');
+          }
+        },
+      });
   }
 }

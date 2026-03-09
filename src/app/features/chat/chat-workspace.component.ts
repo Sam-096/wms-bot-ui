@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   OnDestroy,
   OnInit,
@@ -9,9 +10,10 @@ import {
   signal,
   computed,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
 import { ChatWorkspaceService } from '../../core/services/chat-workspace.service';
@@ -50,7 +52,7 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   private readonly snapSvc     = inject(DashboardSnapshotService);
   private readonly suggestSvc  = inject(SuggestionEngineService);
   private readonly voiceSvc    = inject(VoiceInputService);
-  private readonly destroy$ = new Subject<void>();
+  private readonly destroyRef  = inject(DestroyRef);
 
   // ── Auth context ─────────────────────────────────────────
   readonly user = this.auth.getCurrentUser();
@@ -63,8 +65,8 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   chatRole: UserRole = 'manager';
 
   // ── Layout state ─────────────────────────────────────────
-  readonly leftPanelOpen   = signal(false); // mobile drawer
-  readonly rightPanelOpen  = signal(true);  // desktop right panel
+  readonly leftPanelOpen   = signal(false);
+  readonly rightPanelOpen  = signal(true);
   readonly editingTitle    = signal(false);
   readonly editTitleValue  = signal('');
 
@@ -77,9 +79,9 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   readonly sessionGroups = computed<ChatSessionGroup[]>(() => {
     const q = this.sessionSearch().toLowerCase();
     const now = new Date();
-    const todayStr    = toDateStr(now);
+    const todayStr     = toDateStr(now);
     const yesterdayStr = toDateStr(new Date(now.getTime() - 86400000));
-    const weekAgo     = now.getTime() - 7 * 86400000;
+    const weekAgo      = now.getTime() - 7 * 86400000;
 
     const filtered = this.sessions().filter(
       (s) => !q || s.title.toLowerCase().includes(q) || s.lastMessage?.toLowerCase().includes(q),
@@ -94,10 +96,10 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
 
     for (const s of filtered) {
       const d = toDateStr(s.createdAt);
-      if (d === todayStr) groups[0].sessions.push(s);
-      else if (d === yesterdayStr) groups[1].sessions.push(s);
-      else if (s.createdAt.getTime() > weekAgo) groups[2].sessions.push(s);
-      else groups[3].sessions.push(s);
+      if (d === todayStr)                         groups[0].sessions.push(s);
+      else if (d === yesterdayStr)                groups[1].sessions.push(s);
+      else if (s.createdAt.getTime() > weekAgo)  groups[2].sessions.push(s);
+      else                                        groups[3].sessions.push(s);
     }
     return groups.filter((g) => g.sessions.length > 0);
   });
@@ -114,10 +116,17 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   readonly showCount   = computed(() => this.charCount() > 400);
   private shouldScroll = false;
 
-  // ── Voice ─────────────────────────────────────────────────
+  // ── Streaming SSE controls (LEAK 2 fix) ──────────────────
+  private streamAbortCtrl?: AbortController;
+  private streamSubscription?: Subscription;
+
+  // ── Reaction animation timers (LEAK 5 fix) ───────────────
+  private readonly reactionTimers = new Set<ReturnType<typeof setTimeout>>();
+
+  // ── Voice (FIXED: was `any`) ──────────────────────────────
   voiceState: 'idle' | 'listening' | 'processing' = 'idle';
   voiceDuration = 0;
-  private voiceTimer: any;
+  private voiceTimer: ReturnType<typeof setInterval> | undefined;
   readonly voiceSupported = this.voiceSvc.isSupported;
 
   // ── Dashboard snapshot (right panel) ─────────────────────
@@ -126,19 +135,18 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadSessions();
 
-    // Sync voice state
-    this.voiceSvc.state$.pipe(takeUntil(this.destroy$)).subscribe((s) => {
-      this.voiceState = s;
-    });
+    // Voice state sync — takeUntilDestroyed replaces old Subject+takeUntil
+    this.voiceSvc.state$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((s) => { this.voiceState = s; });
 
-    // Dashboard snapshot polling
     if (this.warehouseId) {
-      this.snapSvc.getSnapshot(this.warehouseId).pipe(takeUntil(this.destroy$)).subscribe((snap) => {
-        this.snapshot.set(snap);
-      });
-      this.snapSvc
-        .startPolling(this.warehouseId, 60_000)
-        .pipe(takeUntil(this.destroy$))
+      this.snapSvc.getSnapshot(this.warehouseId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((snap) => this.snapshot.set(snap));
+
+      this.snapSvc.startPolling(this.warehouseId, 60_000)
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((snap) => this.snapshot.set(snap));
     }
   }
@@ -151,35 +159,44 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.snapSvc.stopPolling();
+    // Abort active SSE fetch (LEAK 2 — prevents orphaned network request)
+    this.streamAbortCtrl?.abort();
+    this.streamSubscription?.unsubscribe();
+
+    // Clear voice interval (LEAK 4)
     clearInterval(this.voiceTimer);
+
+    // Clear all reaction timers (LEAK 5)
+    this.reactionTimers.forEach(clearTimeout);
+    this.reactionTimers.clear();
+
+    this.snapSvc.stopPolling();
   }
 
   // ── Sessions ─────────────────────────────────────────────
   loadSessions(): void {
     if (!this.warehouseId) return;
     this.loadingSessions.set(true);
-    this.chatSvc.getSessions(this.warehouseId).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (list) => {
-        this.sessions.set(list);
-        this.loadingSessions.set(false);
-        // Auto-open first session if any
-        if (list.length > 0 && !this.activeSessionId()) {
-          this.openSession(list[0].id);
-        }
-      },
-      error: () => this.loadingSessions.set(false),
-    });
+    this.chatSvc.getSessions(this.warehouseId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => {
+          this.sessions.set(list);
+          this.loadingSessions.set(false);
+          if (list.length > 0 && !this.activeSessionId()) {
+            this.openSession(list[0].id);
+          }
+        },
+        error: () => this.loadingSessions.set(false),
+      });
   }
 
   newSession(): void {
     const id = crypto.randomUUID();
     const session: ChatSession = {
       id,
-      title: 'New Chat',
-      createdAt: new Date(),
+      title:       'New Chat',
+      createdAt:   new Date(),
       warehouseId: this.warehouseId,
     };
     this.sessions.update((list) => [session, ...list]);
@@ -192,25 +209,28 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
     if (id === this.activeSessionId()) return;
     this.activeSessionId.set(id);
     this.leftPanelOpen.set(false);
-    this.chatSvc.getMessages(id).pipe(takeUntil(this.destroy$)).subscribe((msgs) => {
-      this.messages.set(msgs);
-      this.shouldScroll = true;
-    });
+    this.chatSvc.getMessages(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((msgs) => {
+        this.messages.set(msgs);
+        this.shouldScroll = true;
+      });
   }
 
   deleteSession(id: string): void {
-    this.chatSvc.deleteSession(id).pipe(takeUntil(this.destroy$)).subscribe();
+    this.chatSvc.deleteSession(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
     this.sessions.update((list) => list.filter((s) => s.id !== id));
     if (this.activeSessionId() === id) {
       this.activeSessionId.set(null);
       this.messages.set([]);
     }
-    this.toast.success('Session deleted');
+    this.toast.success('Session Deleted', 'Chat session removed.');
   }
 
   startEditTitle(): void {
-    const title = this.activeSession()?.title ?? '';
-    this.editTitleValue.set(title);
+    this.editTitleValue.set(this.activeSession()?.title ?? '');
     this.editingTitle.set(true);
   }
 
@@ -218,7 +238,9 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
     const id = this.activeSessionId();
     if (!id) return;
     const title = this.editTitleValue().trim() || 'New Chat';
-    this.chatSvc.updateSessionTitle(id, title).pipe(takeUntil(this.destroy$)).subscribe();
+    this.chatSvc.updateSessionTitle(id, title)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
     this.sessions.update((list) =>
       list.map((s) => (s.id === id ? { ...s, title } : s)),
     );
@@ -235,23 +257,21 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
     const text = this.inputText.trim();
     if (!text || this.isLoading()) return;
 
-    // Ensure there's a session
     if (!this.activeSessionId()) this.newSession();
     const sessionId = this.activeSessionId()!;
 
     const userMsg: WorkspaceChatMessage = {
-      id: crypto.randomUUID(),
+      id:          crypto.randomUUID(),
       sessionId,
-      role: 'user',
+      role:        'user',
       text,
-      timestamp: new Date(),
+      timestamp:   new Date(),
       sessionDate: toDateStr(new Date()),
     };
     this.messages.update((m) => [...m, userMsg]);
-    this.inputText = '';
+    this.inputText    = '';
     this.shouldScroll = true;
 
-    // Update session last message
     this.sessions.update((list) =>
       list.map((s) =>
         s.id === sessionId
@@ -260,35 +280,77 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
       ),
     );
 
-    const botMsg: WorkspaceChatMessage = {
-      id: crypto.randomUUID(),
-      sessionId,
-      role: 'bot',
-      text: '',
-      timestamp: new Date(),
-      isLoading: true,
-      sessionDate: toDateStr(new Date()),
-    };
-    this.messages.update((m) => [...m, botMsg]);
+    const botMsgId = crypto.randomUUID();
+    this.messages.update((m) => [
+      ...m,
+      {
+        id:          botMsgId,
+        sessionId,
+        role:        'bot' as const,
+        text:        '',
+        timestamp:   new Date(),
+        isLoading:   true,
+        sessionDate: toDateStr(new Date()),
+      },
+    ]);
     this.isLoading.set(true);
 
-    this.chatSvc
-      .sendMessage(text, this.language, sessionId)
-      .pipe(takeUntil(this.destroy$))
+    // Abort previous stream before starting a new one (LEAK 2 fix)
+    this.streamAbortCtrl?.abort();
+    this.streamAbortCtrl = new AbortController();
+    this.streamSubscription?.unsubscribe();
+
+    this.streamSubscription = this.chatSvc
+      .sendMessage(text, this.language, sessionId, this.streamAbortCtrl.signal)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (token) => {
-          botMsg.text += token;
+          // Immutable update — required for OnPush to detect change
+          this.messages.update((msgs) => {
+            const idx = msgs.findIndex((m) => m.id === botMsgId);
+            if (idx === -1) return msgs;
+            const updated = { ...msgs[idx], text: msgs[idx].text + token };
+            return [...msgs.slice(0, idx), updated, ...msgs.slice(idx + 1)];
+          });
           this.shouldScroll = true;
         },
-        error: () => {
-          botMsg.text = '⚠️ Connection error. Please try again.';
-          botMsg.isLoading = false;
+        error: (e: unknown) => {
           this.isLoading.set(false);
+          this.messages.update((msgs) => {
+            const idx = msgs.findIndex((m) => m.id === botMsgId);
+            if (idx === -1) return msgs;
+            const updated = {
+              ...msgs[idx],
+              text:      '⚠️ Connection error. Please try again.',
+              isLoading: false,
+            };
+            return [...msgs.slice(0, idx), updated, ...msgs.slice(idx + 1)];
+          });
+
+          const code = (e as { error?: { code?: string } })?.error?.code;
+          if (code === 'AI_UNAVAILABLE' || code === 'GROQ_CIRCUIT_OPEN') {
+            this.toast.warning('AI Busy', 'Using backup AI. Response may be slower.');
+          } else if (code === 'SESSION_NOT_FOUND') {
+            this.toast.info('New Session', 'Starting a fresh chat session.');
+            this.newSession();
+          } else {
+            this.toast.error('Chat Error', 'Message failed. Please try again.');
+          }
         },
         complete: () => {
-          botMsg.isLoading = false;
-          botMsg.suggestions = this.suggestSvc.getSuggestions(botMsg.text, this.language);
           this.isLoading.set(false);
+
+          this.messages.update((msgs) => {
+            const idx = msgs.findIndex((m) => m.id === botMsgId);
+            if (idx === -1) return msgs;
+            const msg = msgs[idx];
+            const updated = {
+              ...msg,
+              isLoading:   false,
+              suggestions: this.suggestSvc.getSuggestions(msg.text, this.language),
+            };
+            return [...msgs.slice(0, idx), updated, ...msgs.slice(idx + 1)];
+          });
 
           // Auto-name session from first user message
           const session = this.activeSession();
@@ -297,7 +359,9 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
             this.sessions.update((list) =>
               list.map((s) => (s.id === sessionId ? { ...s, title } : s)),
             );
-            this.chatSvc.updateSessionTitle(sessionId, title).pipe(takeUntil(this.destroy$)).subscribe();
+            this.chatSvc.updateSessionTitle(sessionId, title)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe();
           }
         },
       });
@@ -310,50 +374,76 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
 
   react(msg: WorkspaceChatMessage, helpful: boolean): void {
     if (msg.reaction != null) return;
-    msg.reaction = helpful ? 'up' : 'down';
-    this.chatSvc
-      .sendFeedback({ messageId: msg.id, sessionId: msg.sessionId, helpful })
-      .pipe(takeUntil(this.destroy$))
+    const msgId = msg.id;
+
+    // Immutable signal update (OnPush safe)
+    this.messages.update((msgs) =>
+      msgs.map((m) => m.id === msgId ? { ...m, reaction: helpful ? 'up' : 'down' } : m),
+    );
+
+    this.chatSvc.sendFeedback({ messageId: msg.id, sessionId: msg.sessionId, helpful })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
-    setTimeout(() => {
-      msg.reactionDone = true;
-      setTimeout(() => { msg.reaction = null; msg.reactionDone = false; }, 3000);
+
+    // Tracked timers (LEAK 5 fix)
+    const t1 = setTimeout(() => {
+      this.messages.update((msgs) =>
+        msgs.map((m) => m.id === msgId ? { ...m, reactionDone: true } : m),
+      );
+      this.reactionTimers.delete(t1);
+
+      const t2 = setTimeout(() => {
+        this.messages.update((msgs) =>
+          msgs.map((m) => m.id === msgId ? { ...m, reaction: null, reactionDone: false } : m),
+        );
+        this.reactionTimers.delete(t2);
+      }, 3000);
+      this.reactionTimers.add(t2);
     }, 600);
+    this.reactionTimers.add(t1);
   }
 
   copyMessage(msg: WorkspaceChatMessage): void {
-    navigator.clipboard.writeText(msg.text).then(() => this.toast.success('Copied!'));
+    navigator.clipboard.writeText(msg.text).then(() =>
+      this.toast.success('Copied', 'Message copied to clipboard.'),
+    );
   }
 
   // ── Voice ─────────────────────────────────────────────────
   toggleVoice(): void {
     if (!this.voiceSupported) {
-      this.toast.info('Voice input not supported in this browser');
+      this.toast.info('Not Supported', 'Voice input not supported in this browser.');
       return;
     }
     if (this.voiceState === 'listening') {
       this.voiceSvc.stopListening();
       clearInterval(this.voiceTimer);
+      this.voiceTimer    = undefined;
       this.voiceDuration = 0;
       return;
     }
     this.voiceDuration = 0;
     this.voiceTimer = setInterval(() => this.voiceDuration++, 1000);
-    this.voiceSvc.startListening(this.language).subscribe({
-      next: (transcript) => {
-        clearInterval(this.voiceTimer);
-        this.voiceDuration = 0;
-        this.inputText = transcript;
-        setTimeout(() => this.inputField?.nativeElement.focus(), 100);
-      },
-      error: (err) => {
-        clearInterval(this.voiceTimer);
-        this.voiceDuration = 0;
-        if (err === 'PERMISSION_DENIED') {
-          this.toast.error('Microphone access denied.');
-        }
-      },
-    });
+
+    this.voiceSvc.startListening(this.language)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (transcript) => {
+          clearInterval(this.voiceTimer);
+          this.voiceTimer    = undefined;
+          this.voiceDuration = 0;
+          this.inputText     = transcript;
+          setTimeout(() => this.inputField?.nativeElement.focus(), 100);
+        },
+        error: (err: unknown) => {
+          clearInterval(this.voiceTimer);
+          this.voiceTimer    = undefined;
+          this.voiceDuration = 0;
+          if (err === 'PERMISSION_DENIED') {
+            this.toast.error('Mic Denied', 'Microphone access denied.');
+          }
+        },
+      });
   }
 
   // ── Key handler ───────────────────────────────────────────
@@ -394,8 +484,8 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
     if (q) { this.inputText = q; this.send(); }
   }
 
-  trackById = (_: number, msg: WorkspaceChatMessage) => msg.id;
-  trackBySessionId = (_: number, s: ChatSession) => s.id;
+  trackById        = (_: number, msg: WorkspaceChatMessage): string => msg.id;
+  trackBySessionId = (_: number, s: ChatSession): string => s.id;
 
   formatDuration(secs: number): string {
     const m = Math.floor(secs / 60);

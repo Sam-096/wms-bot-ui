@@ -6,14 +6,24 @@ import { ChatSession, WorkspaceChatMessage, ChatFeedbackRequest } from '../model
 import { Language } from './bot';
 import { AuthService } from './auth.service';
 
-/** Stream SSE from backend, emitting individual TOKEN content strings. */
+/**
+ * Stream SSE from backend, emitting individual TOKEN content strings.
+ *
+ * @param signal Optional AbortSignal — chains to the internal AbortController so
+ *               the component can cancel the fetch on new-send or on destroy.
+ */
 function fetchSSE(
   url: string,
   body: unknown,
   token: string | null,
+  signal?: AbortSignal,
 ): Observable<string> {
   return new Observable<string>((observer) => {
     const ctrl = new AbortController();
+
+    // Chain external signal to our controller so both can abort
+    const onExternalAbort = (): void => ctrl.abort();
+    signal?.addEventListener('abort', onExternalAbort);
 
     fetch(url, {
       method: 'POST',
@@ -56,21 +66,25 @@ function fetchSSE(
                   observer.complete();
                   return;
                 }
-              } catch { /* skip malformed */ }
+              } catch { /* skip malformed event */ }
             }
 
             return pump();
           });
 
-        pump().catch((e) => {
+        pump().catch((e: unknown) => {
           if ((e as Error).name !== 'AbortError') observer.error(e);
         });
       })
-      .catch((e) => {
+      .catch((e: unknown) => {
         if ((e as Error).name !== 'AbortError') observer.error(e);
       });
 
-    return () => ctrl.abort();
+    // Teardown: abort the fetch when Observable is unsubscribed
+    return () => {
+      signal?.removeEventListener('abort', onExternalAbort);
+      ctrl.abort();
+    };
   });
 }
 
@@ -80,18 +94,23 @@ export class ChatWorkspaceService {
   private readonly auth = inject(AuthService);
   private readonly base = `${environment.apiUrl}/api/v1/chat`;
 
-  /** Stream a message — emits individual TOKEN content strings. */
+  /**
+   * Stream a message — emits individual TOKEN content strings.
+   * Errors are propagated to the subscriber (no silent swallowing).
+   *
+   * @param signal Pass component's AbortController.signal to cancel on new send / destroy.
+   */
   sendMessage(
     message: string,
     language: Language,
     sessionId: string,
+    signal?: AbortSignal,
   ): Observable<string> {
     return fetchSSE(
       `${this.base}/stream`,
       { message, userId: this.auth.getUserId(), language, sessionId },
       this.auth.getToken(),
-    ).pipe(
-      catchError(() => of('⚠️ Connection error. Please try again.')),
+      signal,
     );
   }
 
@@ -102,7 +121,7 @@ export class ChatWorkspaceService {
         map((sessions) =>
           sessions.map((s) => ({
             ...s,
-            createdAt: new Date(s.createdAt),
+            createdAt:     new Date(s.createdAt),
             lastMessageAt: s.lastMessageAt ? new Date(s.lastMessageAt) : undefined,
           })),
         ),

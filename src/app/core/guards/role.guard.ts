@@ -1,15 +1,29 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { ToastService } from '../services/toast.service';
 import { AppRole } from '../models/auth.model';
 
-/** Usage: canActivate: [authGuard, roleGuard(['MANAGER', 'OPERATOR'])] */
+/**
+ * Usage: canActivate: [authGuard, roleGuard(['MANAGER', 'ADMIN'])]
+ *
+ * Reads role from JWT (not just localStorage) for tamper-resistance.
+ * Shows a toast explaining the required role on deny.
+ */
 export function roleGuard(allowedRoles: AppRole[]): CanActivateFn {
-  return (_route: ActivatedRouteSnapshot) => {
+  return () => {
     const auth   = inject(AuthService);
     const router = inject(Router);
+    const toast  = inject(ToastService);
 
-    if (auth.hasRole(...allowedRoles)) return true;
+    const role = auth.getUserRole(); // decoded from JWT
+
+    if (role && allowedRoles.includes(role)) return true;
+
+    toast.error(
+      'Access Denied',
+      `This page requires ${allowedRoles.join(' or ')} role.`,
+    );
     return router.createUrlTree(['/unauthorized']);
   };
 }

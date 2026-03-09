@@ -3,6 +3,9 @@ import { authGuard } from './core/guards/auth.guard';
 import { noAuthGuard } from './core/guards/no-auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
+// Note: provideRouter(routes, withPreloading(PreloadAllModules)) is already configured
+// in app.config.ts — no change needed there.
+
 export const routes: Routes = [
   // ── Public ────────────────────────────────────────────────
   {
@@ -98,7 +101,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/reports/reports-list/reports-list').then((m) => m.ReportsList),
       },
+      // Catch-all inside shell → redirect to dashboard
       { path: '**', redirectTo: 'dashboard' },
     ],
   },
+
+  // Root-level catch-all → redirects unauthenticated users to login
+  // (authGuard on the shell above will add returnUrl automatically)
+  { path: '**', redirectTo: '' },
 ];

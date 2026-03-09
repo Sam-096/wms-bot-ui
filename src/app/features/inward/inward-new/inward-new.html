@@ -361,10 +361,10 @@
       </button>
       <button
         class="btn btn-primary gap-2 min-w-36"
-        [disabled]="submitting()"
+        [disabled]="(submitting$ | async)"
         (click)="submit()"
       >
-        @if (submitting()) {
+        @if (submitting$ | async) {
           <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
           Saving entry…
         } @else {
