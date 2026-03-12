@@ -10,6 +10,7 @@ export const routes: Routes = [
   // ── Public ────────────────────────────────────────────────
   {
     path: '',
+    canActivate: [noAuthGuard],
     loadComponent: () =>
       import('./features/landing/landing.component').then((m) => m.LandingComponent),
   },
