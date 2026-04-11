@@ -49,15 +49,16 @@ export class LoginComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          const { user } = res;
-          this.toast.success('Welcome Back', `Good to see you, ${user.username}!`);
+          this.loading.set(false);
+          const user = res?.user;
+          this.toast.success('Welcome Back', `Good to see you, ${user?.username ?? 'there'}!`);
 
           // Connect real-time warehouse events for the session
-          this.realtime.connect(user.warehouseId);
+          if (user?.warehouseId) this.realtime.connect(user.warehouseId);
 
           // Navigate to returnUrl if present, else role-appropriate default
           const returnUrl    = this.route.snapshot.queryParamMap.get('returnUrl');
-          const defaultRoute = this.auth.getDefaultRouteForRole(user.role);
+          const defaultRoute = user?.role ? this.auth.getDefaultRouteForRole(user.role) : '/dashboard';
           void this.router.navigateByUrl(returnUrl ?? defaultRoute);
         },
         error: (err: HttpErrorResponse) => {

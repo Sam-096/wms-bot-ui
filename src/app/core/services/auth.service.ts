@@ -85,7 +85,8 @@ export class AuthService {
     const token = this.getToken();
     if (!token) return true;
     const payload = this.decodeJwt(token);
-    if (!payload?.['exp']) return true;
+    if (!payload) return true;
+    if (!payload['exp']) return false;
     return Date.now() >= (payload['exp'] as number) * 1000;
   }
 
