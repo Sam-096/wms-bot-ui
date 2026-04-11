@@ -13,6 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
+import { TokenRefreshService } from '../../../core/services/token-refresh.service';
 
 @Component({
   selector: 'app-login',
@@ -27,8 +28,9 @@ export class LoginComponent {
   private readonly toast      = inject(ToastService);
   private readonly router     = inject(Router);
   private readonly route      = inject(ActivatedRoute);
-  private readonly realtime   = inject(RealtimeService);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly realtime      = inject(RealtimeService);
+  private readonly tokenRefresh  = inject(TokenRefreshService);
+  private readonly destroyRef    = inject(DestroyRef);
 
   readonly showPassword = signal(false);
   readonly loading      = signal(false);
@@ -52,6 +54,9 @@ export class LoginComponent {
           this.loading.set(false);
           const user = res?.user;
           this.toast.success('Welcome Back', `Good to see you, ${user?.username ?? 'there'}!`);
+
+          // Start proactive JWT refresh 5 min before expiry
+          this.tokenRefresh.start();
 
           // Connect real-time warehouse events for the session
           if (user?.warehouseId) this.realtime.connect(user.warehouseId);

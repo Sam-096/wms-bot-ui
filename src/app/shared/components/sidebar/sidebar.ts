@@ -11,6 +11,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
+import { TokenRefreshService } from '../../../core/services/token-refresh.service';
 import { ALL_NAV, NavItem } from './sidebar-config';
 
 @Component({
@@ -24,9 +25,10 @@ import { ALL_NAV, NavItem } from './sidebar-config';
 export class SidebarComponent {
   @Output() navClicked = new EventEmitter<void>();
 
-  private readonly auth     = inject(AuthService);
-  private readonly toast    = inject(ToastService);
-  private readonly realtime = inject(RealtimeService);
+  private readonly auth         = inject(AuthService);
+  private readonly toast        = inject(ToastService);
+  private readonly realtime     = inject(RealtimeService);
+  private readonly tokenRefresh = inject(TokenRefreshService);
 
   readonly user = this.auth.getCurrentUser();
 
@@ -46,6 +48,7 @@ export class SidebarComponent {
   readonly displayRole = computed<string>(() => this.user?.role ?? 'Warehouse User');
 
   signOut(): void {
+    this.tokenRefresh.stop();
     this.realtime.disconnect();
     this.toast.info('Goodbye', 'Logged out successfully.');
     this.auth.logout();

@@ -10,6 +10,10 @@ import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { ThemeService } from '../../../core/services/theme.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { RealtimeService } from '../../../core/services/realtime.service';
+import { TokenRefreshService } from '../../../core/services/token-refresh.service';
 
 const ROUTE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
@@ -33,8 +37,12 @@ const ROUTE_TITLES: Record<string, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TopbarComponent implements OnInit, OnDestroy {
-  readonly theme = inject(ThemeService);
-  private readonly router = inject(Router);
+  readonly theme    = inject(ThemeService);
+  private readonly router       = inject(Router);
+  private readonly auth         = inject(AuthService);
+  private readonly toast        = inject(ToastService);
+  private readonly realtime     = inject(RealtimeService);
+  private readonly tokenRefresh = inject(TokenRefreshService);
 
   readonly pageTitle = signal('Dashboard');
   private sub?: Subscription;
@@ -56,6 +64,9 @@ export class TopbarComponent implements OnInit, OnDestroy {
   }
 
   signOut(): void {
-    this.router.navigate(['/']);
+    this.tokenRefresh.stop();
+    this.realtime.disconnect();
+    this.toast.info('Goodbye', 'Logged out successfully.');
+    this.auth.logout();
   }
 }

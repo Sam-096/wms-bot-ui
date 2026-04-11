@@ -17,6 +17,7 @@ import {
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { TokenRefreshService } from '../../../core/services/token-refresh.service';
 import { Warehouse, AppRole } from '../../../core/models/auth.model';
 
 function passwordMatchValidator(ctrl: AbstractControl): ValidationErrors | null {
@@ -33,10 +34,11 @@ function passwordMatchValidator(ctrl: AbstractControl): ValidationErrors | null 
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegisterComponent implements OnInit {
-  private readonly fb     = inject(FormBuilder);
-  private readonly auth   = inject(AuthService);
-  private readonly toast  = inject(ToastService);
-  private readonly router = inject(Router);
+  private readonly fb           = inject(FormBuilder);
+  private readonly auth         = inject(AuthService);
+  private readonly toast        = inject(ToastService);
+  private readonly tokenRefresh = inject(TokenRefreshService);
+  private readonly router       = inject(Router);
 
   readonly showPassword    = signal(false);
   readonly showConfirm     = signal(false);
@@ -109,9 +111,12 @@ export class RegisterComponent implements OnInit {
         warehouseId: v.warehouseId!,
       })
       .subscribe({
-        next: () => {
-          this.toast.success('Account Created', 'Welcome to Godown AI!');
-          this.router.navigate(['/dashboard']);
+        next: (res) => {
+          this.loading.set(false);
+          this.tokenRefresh.start();
+          const user = res?.user;
+          this.toast.success('Account Created', `Welcome, ${user?.username ?? 'there'}!`);
+          void this.router.navigate(['/dashboard']);
         },
         error: (err) => {
           this.loading.set(false);
