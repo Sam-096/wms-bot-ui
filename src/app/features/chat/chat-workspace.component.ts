@@ -123,9 +123,10 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   // ── Reaction animation timers (LEAK 5 fix) ───────────────
   private readonly reactionTimers = new Set<ReturnType<typeof setTimeout>>();
 
-  // ── Voice (FIXED: was `any`) ──────────────────────────────
-  voiceState: 'idle' | 'listening' | 'processing' = 'idle';
-  voiceDuration = 0;
+  // ── Voice ────────────────────────────────────────────────
+  // Signals required — plain properties don't trigger OnPush re-render
+  readonly voiceState    = signal<'idle' | 'listening' | 'processing'>('idle');
+  readonly voiceDuration = signal(0);
   private voiceTimer: ReturnType<typeof setInterval> | undefined;
   readonly voiceSupported = this.voiceSvc.isSupported;
 
@@ -138,7 +139,7 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
     // Voice state sync — takeUntilDestroyed replaces old Subject+takeUntil
     this.voiceSvc.state$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((s) => { this.voiceState = s; });
+      .subscribe((s) => { this.voiceState.set(s); });
 
     if (this.warehouseId) {
       this.snapSvc.getSnapshot(this.warehouseId)
@@ -415,30 +416,30 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
       this.toast.info('Not Supported', 'Voice input not supported in this browser.');
       return;
     }
-    if (this.voiceState === 'listening') {
+    if (this.voiceState() === 'listening') {
       this.voiceSvc.stopListening();
       clearInterval(this.voiceTimer);
-      this.voiceTimer    = undefined;
-      this.voiceDuration = 0;
+      this.voiceTimer = undefined;
+      this.voiceDuration.set(0);
       return;
     }
-    this.voiceDuration = 0;
-    this.voiceTimer = setInterval(() => this.voiceDuration++, 1000);
+    this.voiceDuration.set(0);
+    this.voiceTimer = setInterval(() => this.voiceDuration.update((v) => v + 1), 1000);
 
     this.voiceSvc.startListening(this.language)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (transcript) => {
           clearInterval(this.voiceTimer);
-          this.voiceTimer    = undefined;
-          this.voiceDuration = 0;
-          this.inputText     = transcript;
+          this.voiceTimer = undefined;
+          this.voiceDuration.set(0);
+          this.inputText  = transcript;
           setTimeout(() => this.inputField?.nativeElement.focus(), 100);
         },
         error: (err: unknown) => {
           clearInterval(this.voiceTimer);
-          this.voiceTimer    = undefined;
-          this.voiceDuration = 0;
+          this.voiceTimer = undefined;
+          this.voiceDuration.set(0);
           if (err === 'PERMISSION_DENIED') {
             this.toast.error('Mic Denied', 'Microphone access denied.');
           }
