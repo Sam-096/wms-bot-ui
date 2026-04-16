@@ -13,10 +13,14 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
-import { ChatWorkspaceService } from '../../core/services/chat-workspace.service';
+import {
+  ChatWorkspaceService,
+  sanitizeStreamText,
+} from '../../core/services/chat-workspace.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DashboardSnapshotService } from '../../core/services/dashboard-snapshot.service';
 import { SuggestionEngineService } from '../../core/services/suggestion-engine.service';
@@ -52,7 +56,11 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   private readonly snapSvc     = inject(DashboardSnapshotService);
   private readonly suggestSvc  = inject(SuggestionEngineService);
   private readonly voiceSvc    = inject(VoiceInputService);
+  private readonly router      = inject(Router);
   private readonly destroyRef  = inject(DestroyRef);
+
+  private static readonly LANG_KEY = 'chat.language';
+  private static readonly SUPPORTED_LANGS: readonly Language[] = ['en', 'te', 'hi', 'ta', 'kn', 'mr', 'ne'];
 
   // ── Auth context ─────────────────────────────────────────
   readonly user = this.auth.getCurrentUser();
@@ -61,8 +69,22 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
   get warehouseName() { return this.user?.warehouseName ?? 'Warehouse'; }
 
   // ── Language / role for chat API ─────────────────────────
-  language: Language = 'en';
+  // Language persists in localStorage so it survives page reloads.
+  language: Language = this.loadLanguage();
   chatRole: UserRole = 'manager';
+
+  setLanguage(lang: Language): void {
+    this.language = lang;
+    try { localStorage.setItem(ChatWorkspaceComponent.LANG_KEY, lang); } catch { /* ignore quota/disabled storage */ }
+  }
+
+  private loadLanguage(): Language {
+    try {
+      const stored = localStorage.getItem(ChatWorkspaceComponent.LANG_KEY) as Language | null;
+      if (stored && ChatWorkspaceComponent.SUPPORTED_LANGS.includes(stored)) return stored;
+    } catch { /* ignore */ }
+    return 'en';
+  }
 
   // ── Layout state ─────────────────────────────────────────
   readonly leftPanelOpen   = signal(false);
@@ -301,18 +323,41 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
     this.streamAbortCtrl = new AbortController();
     this.streamSubscription?.unsubscribe();
 
+    const snap = this.snapshot();
     this.streamSubscription = this.chatSvc
-      .sendMessage(text, this.language, sessionId, this.streamAbortCtrl.signal)
+      .sendMessage(text, this.language, sessionId, this.streamAbortCtrl.signal, {
+        warehouseId:    this.warehouseId,
+        warehouseName:  this.warehouseName,
+        pendingInward:  snap?.pendingInward,
+        pendingOutward: snap?.pendingOutward,
+        lowStockCount:  snap?.lowStockItems,
+        openGatePasses: snap?.activeVehicles,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (token) => {
-          // Immutable update — required for OnPush to detect change
-          this.messages.update((msgs) => {
-            const idx = msgs.findIndex((m) => m.id === botMsgId);
-            if (idx === -1) return msgs;
-            const updated = { ...msgs[idx], text: msgs[idx].text + token };
-            return [...msgs.slice(0, idx), updated, ...msgs.slice(idx + 1)];
-          });
+        next: (evt) => {
+          if (evt.type === 'access-denied') {
+            this.messages.update((msgs) => {
+              const idx = msgs.findIndex((m) => m.id === botMsgId);
+              if (idx === -1) return msgs;
+              const updated = {
+                ...msgs[idx],
+                kind:      'access-denied' as const,
+                text:      evt.text,
+                actions:   evt.actions,
+                isLoading: false,
+              };
+              return [...msgs.slice(0, idx), updated, ...msgs.slice(idx + 1)];
+            });
+          } else {
+            // token — immutable update required for OnPush to detect change
+            this.messages.update((msgs) => {
+              const idx = msgs.findIndex((m) => m.id === botMsgId);
+              if (idx === -1) return msgs;
+              const updated = { ...msgs[idx], text: msgs[idx].text + evt.text };
+              return [...msgs.slice(0, idx), updated, ...msgs.slice(idx + 1)];
+            });
+          }
           this.shouldScroll = true;
         },
         error: (e: unknown) => {
@@ -345,10 +390,16 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
             const idx = msgs.findIndex((m) => m.id === botMsgId);
             if (idx === -1) return msgs;
             const msg = msgs[idx];
+            // Sanitize leaked JSON/code fences from streamed tokens (defense-in-depth).
+            // Access-denied cards already carry clean text from the backend event.
+            const cleaned = msg.kind === 'access-denied' ? msg.text : sanitizeStreamText(msg.text);
             const updated = {
               ...msg,
+              text:        cleaned,
               isLoading:   false,
-              suggestions: this.suggestSvc.getSuggestions(msg.text, this.language),
+              suggestions: msg.kind === 'access-denied'
+                ? undefined
+                : this.suggestSvc.getSuggestions(cleaned, this.language),
             };
             return [...msgs.slice(0, idx), updated, ...msgs.slice(idx + 1)];
           });
@@ -408,6 +459,10 @@ export class ChatWorkspaceComponent implements OnInit, OnDestroy {
     navigator.clipboard.writeText(msg.text).then(() =>
       this.toast.success('Copied', 'Message copied to clipboard.'),
     );
+  }
+
+  navigateTo(route: string): void {
+    void this.router.navigateByUrl(route);
   }
 
   // ── Voice ─────────────────────────────────────────────────

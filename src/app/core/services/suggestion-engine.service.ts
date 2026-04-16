@@ -21,6 +21,7 @@ const SUGGESTIONS: Record<Intent, Record<Language, string[]>> = {
     ta: ['GRN பட்டியல்', 'Pending approve', 'புதிய inward'],
     kn: ['ಎಲ್ಲಾ GRN', 'Pending approve', 'ಹೊಸ inward'],
     mr: ['सर्व GRN', 'Pending approve', 'नवीन inward'],
+    ne: ['सबै GRN हेर्नुहोस्', 'Pending approve गर्नुहोस्', 'नयाँ inward'],
   },
   OUTWARD: {
     en: ['View dispatches', 'Pending outward', 'New dispatch'],
@@ -29,6 +30,7 @@ const SUGGESTIONS: Record<Intent, Record<Language, string[]>> = {
     ta: ['Dispatch பட்டியல்', 'Pending outward', 'புதிய dispatch'],
     kn: ['ಎಲ್ಲಾ dispatch', 'Pending outward', 'ಹೊಸ dispatch'],
     mr: ['सर्व dispatch', 'Pending outward', 'नवीन dispatch'],
+    ne: ['सबै dispatch हेर्नुहोस्', 'Pending outward', 'नयाँ dispatch'],
   },
   STOCK: {
     en: ['Low stock items', 'Search item', 'Stock report'],
@@ -37,6 +39,7 @@ const SUGGESTIONS: Record<Intent, Record<Language, string[]>> = {
     ta: ['குறைந்த stock', 'Item தேடு', 'Stock report'],
     kn: ['Low stock items', 'Item ಹುಡುಕು', 'Stock report'],
     mr: ['Low stock items', 'Item शोधा', 'Stock report'],
+    ne: ['कम stock वस्तुहरू', 'Item खोज्नुहोस्', 'Stock report'],
   },
   GATE_PASS: {
     en: ['Open gate passes', 'New gate pass', "Today's log"],
@@ -45,6 +48,7 @@ const SUGGESTIONS: Record<Intent, Record<Language, string[]>> = {
     ta: ['Open gate passes', 'புதிய gate pass', 'இன்று log'],
     kn: ['Open gate passes', 'ಹೊಸ gate pass', 'ಇಂದಿನ log'],
     mr: ['Open gate passes', 'नवीन gate pass', 'आजचा log'],
+    ne: ['खुला gate passes', 'नयाँ gate pass', 'आजको log'],
   },
   BOND: {
     en: ['Active bonds', 'Bond expiry', 'Bond report'],
@@ -53,6 +57,7 @@ const SUGGESTIONS: Record<Intent, Record<Language, string[]>> = {
     ta: ['Active bonds', 'Bond expiry', 'Bond report'],
     kn: ['Active bonds', 'Bond expiry', 'Bond report'],
     mr: ['Active bonds', 'Bond expiry', 'Bond report'],
+    ne: ['Active bonds', 'Bond expiry', 'Bond report'],
   },
   REPORT: {
     en: ['Daily summary', 'Weekly report', 'Export data'],
@@ -61,6 +66,7 @@ const SUGGESTIONS: Record<Intent, Record<Language, string[]>> = {
     ta: ['Daily summary', 'Weekly report', 'Export data'],
     kn: ['Daily summary', 'Weekly report', 'Export data'],
     mr: ['Daily summary', 'Weekly report', 'Export data'],
+    ne: ['Daily summary', 'Weekly report', 'Export data'],
   },
   GENERAL: {
     en: ['Check stock', 'Gate pass status', 'Warehouse summary'],
@@ -69,6 +75,7 @@ const SUGGESTIONS: Record<Intent, Record<Language, string[]>> = {
     ta: ['Stock சரிபார்', 'Gate pass status', 'Warehouse summary'],
     kn: ['Stock ಪರಿಶೀಲಿಸಿ', 'Gate pass status', 'Warehouse summary'],
     mr: ['Stock तपासा', 'Gate pass status', 'Warehouse summary'],
+    ne: ['Stock जाँच गर्नुहोस्', 'Gate pass status', 'Warehouse summary'],
   },
 };
 

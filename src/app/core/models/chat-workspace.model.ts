@@ -7,6 +7,11 @@ export type WorkspaceResponseType =
   | 'alert'
   | 'list';
 
+export interface ChatMessageAction {
+  label: string;
+  route: string;
+}
+
 export interface WorkspaceChatMessage {
   id: string;
   sessionId: string;
@@ -19,6 +24,8 @@ export interface WorkspaceChatMessage {
   suggestions?: string[];
   responseType?: WorkspaceResponseType;
   sessionDate?: string;
+  kind?: 'text' | 'access-denied';
+  actions?: ChatMessageAction[];
 }
 
 export interface ChatSession {

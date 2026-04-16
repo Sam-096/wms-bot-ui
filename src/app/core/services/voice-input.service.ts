@@ -11,6 +11,7 @@ const LANG_MAP: Record<Language, string> = {
   ta: 'ta-IN',
   kn: 'kn-IN',
   mr: 'mr-IN',
+  ne: 'ne-NP',
 };
 
 @Injectable({ providedIn: 'root' })

@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 
-export type Language = 'te' | 'hi' | 'en' | 'ta' | 'kn' | 'mr';
+export type Language = 'te' | 'hi' | 'en' | 'ta' | 'kn' | 'mr' | 'ne';
 export type UserRole  = 'driver' | 'gatekeeper' | 'manager' | 'admin';
 
 export interface QuickAction {

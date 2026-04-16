@@ -1,4 +1,4 @@
-export type Language = 'te' | 'hi' | 'en' | 'ta' | 'kn' | 'mr';
+export type Language = 'te' | 'hi' | 'en' | 'ta' | 'kn' | 'mr' | 'ne';
 export type UserRole = 'driver' | 'gatekeeper' | 'manager' | 'admin';
 export type Reaction = 'up' | 'down' | null;
 

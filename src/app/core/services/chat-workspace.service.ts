@@ -2,12 +2,44 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, of, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ChatSession, WorkspaceChatMessage, ChatFeedbackRequest } from '../models/chat-workspace.model';
+import {
+  ChatSession,
+  WorkspaceChatMessage,
+  ChatFeedbackRequest,
+  ChatMessageAction,
+} from '../models/chat-workspace.model';
 import { Language } from './bot';
 import { AuthService } from './auth.service';
 
+export type ChatStreamEvent =
+  | { type: 'token'; text: string }
+  | { type: 'access-denied'; text: string; actions: ChatMessageAction[] };
+
+interface RawSseEvent {
+  type: string;
+  content?: string | null;
+  data?: unknown;
+  timestamp?: string;
+}
+
+/** Strip leaked JSON envelopes and code fences from streamed text. Defense-in-depth. */
+const JSON_ENVELOPE = /\{\s*\\?"type\\?"\s*:[\s\S]*?\}\s*\]?\s*/g;
+const CODE_FENCE = /```[a-zA-Z]*\n?[\s\S]*?```\s*/g;
+export function sanitizeStreamText(raw: string): string {
+  return raw.replace(JSON_ENVELOPE, '').replace(CODE_FENCE, '').trim();
+}
+
+function parseActions(data: unknown): ChatMessageAction[] {
+  if (!Array.isArray(data)) return [];
+  return data
+    .filter((a): a is ChatMessageAction =>
+      !!a && typeof (a as ChatMessageAction).label === 'string'
+         && typeof (a as ChatMessageAction).route === 'string',
+    );
+}
+
 /**
- * Stream SSE from backend, emitting individual TOKEN content strings.
+ * Stream SSE from backend, emitting typed ChatStreamEvent values.
  *
  * @param signal Optional AbortSignal — chains to the internal AbortController so
  *               the component can cancel the fetch on new-send or on destroy.
@@ -17,11 +49,10 @@ function fetchSSE(
   body: unknown,
   token: string | null,
   signal?: AbortSignal,
-): Observable<string> {
-  return new Observable<string>((observer) => {
+): Observable<ChatStreamEvent> {
+  return new Observable<ChatStreamEvent>((observer) => {
     const ctrl = new AbortController();
 
-    // Chain external signal to our controller so both can abort
     const onExternalAbort = (): void => ctrl.abort();
     signal?.addEventListener('abort', onExternalAbort);
 
@@ -29,6 +60,7 @@ function fetchSSE(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(body),
@@ -54,19 +86,35 @@ function fetchSSE(
               const raw = line.slice(5).trim();
               if (!raw) continue;
 
-              try {
-                const evt = JSON.parse(raw) as { type: string; content?: string | null };
-                if (evt.type === 'TOKEN' && evt.content) {
-                  observer.next(evt.content);
-                } else if (evt.type === 'INSTANT') {
-                  observer.next(evt.content ?? '');
+              let evt: RawSseEvent;
+              try { evt = JSON.parse(raw) as RawSseEvent; } catch { continue; }
+
+              switch (evt.type) {
+                case 'TOKEN':
+                  if (evt.content) observer.next({ type: 'token', text: evt.content });
+                  break;
+                case 'INSTANT':
+                  observer.next({ type: 'token', text: evt.content ?? '' });
                   observer.complete();
                   return;
-                } else if (evt.type === 'DONE') {
+                case 'ACCESS_DENIED':
+                  observer.next({
+                    type: 'access-denied',
+                    text: evt.content ?? '',
+                    actions: parseActions(evt.data),
+                  });
                   observer.complete();
                   return;
-                }
-              } catch { /* skip malformed event */ }
+                case 'DONE':
+                  observer.complete();
+                  return;
+                case 'ERROR':
+                  observer.error(new Error(evt.content ?? 'Stream error'));
+                  return;
+                default:
+                  console.warn('[chat] unknown SSE type:', evt.type);
+                  break;
+              }
             }
 
             return pump();
@@ -80,12 +128,20 @@ function fetchSSE(
         if ((e as Error).name !== 'AbortError') observer.error(e);
       });
 
-    // Teardown: abort the fetch when Observable is unsubscribed
     return () => {
       signal?.removeEventListener('abort', onExternalAbort);
       ctrl.abort();
     };
   });
+}
+
+export interface ChatSendContext {
+  warehouseId?: string;
+  warehouseName?: string;
+  pendingInward?: number;
+  pendingOutward?: number;
+  lowStockCount?: number;
+  openGatePasses?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -95,9 +151,7 @@ export class ChatWorkspaceService {
   private readonly base = `${environment.apiUrl}/api/v1/chat`;
 
   /**
-   * Stream a message — emits individual TOKEN content strings.
-   * Errors are propagated to the subscriber (no silent swallowing).
-   *
+   * Stream a message — emits typed ChatStreamEvent values.
    * @param signal Pass component's AbortController.signal to cancel on new send / destroy.
    */
   sendMessage(
@@ -105,13 +159,23 @@ export class ChatWorkspaceService {
     language: Language,
     sessionId: string,
     signal?: AbortSignal,
-  ): Observable<string> {
-    return fetchSSE(
-      `${this.base}/stream`,
-      { message, userId: this.auth.getUserId(), language, sessionId },
-      this.auth.getToken(),
-      signal,
-    );
+    context?: ChatSendContext,
+  ): Observable<ChatStreamEvent> {
+    const body = {
+      message,
+      userId: this.auth.getUserId(),
+      language,
+      sessionId,
+      warehouseId:   context?.warehouseId,
+      warehouseName: context?.warehouseName,
+      context: {
+        pendingInward:  context?.pendingInward,
+        pendingOutward: context?.pendingOutward,
+        lowStockCount:  context?.lowStockCount,
+        openGatePasses: context?.openGatePasses,
+      },
+    };
+    return fetchSSE(`${this.base}/stream`, body, this.auth.getToken(), signal);
   }
 
   getSessions(warehouseId: string): Observable<ChatSession[]> {

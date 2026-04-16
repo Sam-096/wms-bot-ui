@@ -107,6 +107,7 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked, OnDestroy 
     { code: 'ta', label: 'தமிழ்', flag: '🇮🇳' },
     { code: 'kn', label: 'ಕನ್ನಡ', flag: '🇮🇳' },
     { code: 'mr', label: 'मराठी', flag: '🇮🇳' },
+    { code: 'ne', label: 'नेपाली', flag: '🇳🇵' },
   ];
 
   readonly roles = [
@@ -123,6 +124,7 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked, OnDestroy 
     ta: 'வணக்கம்! நான் உங்கள் warehouse assistant. எப்படி உதவலாம்?',
     kn: 'ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ warehouse assistant. ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?',
     mr: 'नमस्कार! मी तुमचा warehouse assistant. कशी मदत करू?',
+    ne: 'नमस्ते! म तपाईंको warehouse assistant हुँ। कसरी सहयोग गरूँ?',
   };
 
   ngOnInit(): void {
@@ -307,7 +309,7 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked, OnDestroy 
     this.synthesis.cancel();
     const map: Record<Language, string> = {
       te: 'te-IN', hi: 'hi-IN', en: 'en-US',
-      ta: 'ta-IN', kn: 'kn-IN', mr: 'mr-IN',
+      ta: 'ta-IN', kn: 'kn-IN', mr: 'mr-IN', ne: 'ne-NP',
     };
     const u = new SpeechSynthesisUtterance(
       text.replace(/[^\w\s.,!?।\u0C00-\u0C7F\u0900-\u097F]/g, ''),

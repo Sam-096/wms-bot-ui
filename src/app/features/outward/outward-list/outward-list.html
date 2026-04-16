@@ -1,1 +1,248 @@
-<p>outward-list works!</p>
+<!-- ══════════════════════════════════════════════════
+     Outward Register — Production UI
+══════════════════════════════════════════════════ -->
+
+<!-- ─── Page Header ─────────────────────────────── -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+  <div>
+    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-widest mb-1">
+      Outward Operations
+    </p>
+    <h1 class="text-3xl font-bold text-base-content">Outward Register</h1>
+    <p class="text-sm text-base-content/50 mt-1">
+      {{ stats().total }} total dispatches · {{ countPending() }} pending approval
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <button class="btn btn-ghost btn-sm gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      Export
+    </button>
+    <a routerLink="/outward/new" class="btn btn-primary btn-sm gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      New Outward
+    </a>
+  </div>
+</div>
+
+<!-- ─── KPI Cards ─────────────────────────────────── -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+  <div class="card bg-base-200 border border-base-300 shadow-sm p-5">
+    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-widest mb-2">Total</p>
+    <p class="text-3xl font-bold text-base-content tabular-nums">{{ stats().total }}</p>
+    <p class="text-xs text-base-content/40 mt-1">All dispatches</p>
+  </div>
+  <div class="card bg-base-200 border border-base-300 shadow-sm p-5">
+    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-widest mb-2">Pending</p>
+    <p class="text-3xl font-bold text-warning tabular-nums">{{ countPending() }}</p>
+    <p class="text-xs text-base-content/40 mt-1">Awaiting review</p>
+  </div>
+  <div class="card bg-base-200 border border-base-300 shadow-sm p-5">
+    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-widest mb-2">Approved</p>
+    <p class="text-3xl font-bold text-success tabular-nums">{{ countApproved() }}</p>
+    <p class="text-xs text-base-content/40 mt-1">Cleared</p>
+  </div>
+  <div class="card bg-base-200 border border-base-300 shadow-sm p-5">
+    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-widest mb-2">Rejected</p>
+    <p class="text-3xl font-bold text-error tabular-nums">{{ countRejected() }}</p>
+    <p class="text-xs text-base-content/40 mt-1">Returned</p>
+  </div>
+</div>
+
+<!-- ─── Filter Bar ────────────────────────────────── -->
+<div class="card bg-base-200 border border-base-300 shadow-sm mb-4">
+  <div class="card-body p-4 gap-3">
+    <div class="flex flex-wrap gap-3 items-center">
+      <label class="input input-bordered flex items-center gap-2 flex-1 min-w-52 h-10">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="opacity-40 shrink-0" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+        </svg>
+        <input
+          type="text"
+          class="grow text-sm"
+          placeholder="Search vehicle, destination, commodity, ID…"
+          [value]="searchQuery()"
+          (input)="onSearch($any($event.target).value)"
+          aria-label="Search dispatches"
+        />
+        @if (searchQuery()) {
+          <button class="btn btn-ghost btn-xs btn-circle" (click)="onSearch('')" aria-label="Clear search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        }
+      </label>
+
+      <select
+        class="select select-bordered select-sm w-40 h-10"
+        [value]="filterStatus()"
+        (change)="onStatusFilter($any($event.target).value)"
+        aria-label="Filter by status"
+      >
+        <option value="">All Status</option>
+        <option value="Approved">Approved</option>
+        <option value="Pending">Pending</option>
+        <option value="Processing">Processing</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+
+      <input
+        type="date"
+        class="input input-bordered input-sm w-40 h-10"
+        [value]="filterDate()"
+        (change)="onDateFilter($any($event.target).value)"
+        aria-label="Filter by date"
+      />
+
+      @if (hasFilters()) {
+        <button class="btn btn-ghost btn-sm text-error gap-1.5" (click)="clearFilters()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Clear filters
+        </button>
+      }
+    </div>
+
+    @if (hasFilters()) {
+      <div class="flex flex-wrap gap-2">
+        @if (searchQuery()) {
+          <div class="badge badge-outline gap-1.5 py-3 px-3">
+            <span class="text-xs">Search: "{{ searchQuery() }}"</span>
+            <button class="opacity-60 hover:opacity-100" (click)="onSearch('')" aria-label="Remove search filter">✕</button>
+          </div>
+        }
+        @if (filterStatus()) {
+          <div class="badge badge-outline gap-1.5 py-3 px-3">
+            <span class="text-xs">Status: {{ filterStatus() }}</span>
+            <button class="opacity-60 hover:opacity-100" (click)="onStatusFilter('')" aria-label="Remove status filter">✕</button>
+          </div>
+        }
+        @if (filterDate()) {
+          <div class="badge badge-outline gap-1.5 py-3 px-3">
+            <span class="text-xs">Date: {{ filterDate() }}</span>
+            <button class="opacity-60 hover:opacity-100" (click)="onDateFilter('')" aria-label="Remove date filter">✕</button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+@if (hasFilters()) {
+  <p class="text-xs text-base-content/40 mb-3 px-1">
+    Showing {{ total() }} result{{ total() !== 1 ? 's' : '' }} for applied filters
+  </p>
+}
+
+<!-- ─── Table ─────────────────────────────────────── -->
+<div class="card bg-base-200 border border-base-300 shadow-sm overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="table table-sm" aria-label="Outward dispatches">
+      <thead>
+        <tr class="bg-base-300 text-base-content/50 text-xs uppercase tracking-wider border-b border-base-300">
+          <th class="pl-5">Outward No.</th>
+          <th>Date</th>
+          <th>Vehicle No.</th>
+          <th>Driver</th>
+          <th>Commodity</th>
+          <th class="text-right">Bags</th>
+          <th>Destination</th>
+          <th>Purpose</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading() && rows().length === 0) {
+          @for (i of [1,2,3,4,5]; track i) {
+            <tr class="border-b border-base-300/40">
+              <td colspan="9" class="px-5 py-3"><div class="skeleton h-6 w-full rounded"></div></td>
+            </tr>
+          }
+        } @else if (loadError()) {
+          <tr>
+            <td colspan="9">
+              <div class="flex flex-col items-center justify-center py-20 gap-3">
+                <p class="font-semibold text-error">Failed to load outward dispatches</p>
+                <button class="btn btn-sm btn-outline" (click)="retry()">Retry</button>
+              </div>
+            </td>
+          </tr>
+        } @else {
+          @for (entry of rows(); track trackById($index, entry)) {
+            <tr class="hover:bg-base-300/40 cursor-pointer border-b border-base-300/40 transition-colors group">
+              <td class="pl-5">
+                <span class="font-mono text-xs font-medium text-primary">{{ entry.outwardNumber }}</span>
+              </td>
+              <td><span class="text-sm text-base-content/70">{{ entry.date }}</span></td>
+              <td><span class="font-semibold text-sm tracking-wide text-base-content">{{ entry.vehicleNo }}</span></td>
+              <td><span class="text-sm text-base-content">{{ entry.driverName }}</span></td>
+              <td><span class="badge badge-ghost badge-sm font-medium">{{ entry.commodity }}</span></td>
+              <td class="text-right">
+                <span class="text-sm tabular-nums font-medium text-base-content">{{ entry.bags }}</span>
+              </td>
+              <td><span class="text-sm text-base-content/80">{{ entry.destination }}</span></td>
+              <td><span class="text-xs text-base-content/60">{{ entry.purpose }}</span></td>
+              <td>
+                <span class="badge badge-sm font-medium" [class]="statusBadge(entry.status)">
+                  {{ entry.status }}
+                </span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9">
+                <div class="flex flex-col items-center justify-center py-20 gap-4">
+                  <div class="w-16 h-16 rounded-2xl bg-base-300 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/30" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+                    </svg>
+                  </div>
+                  <div class="text-center">
+                    <p class="font-semibold text-base-content/60">No dispatches found</p>
+                    <p class="text-sm text-base-content/30 mt-1">Try adjusting your search or filters</p>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" (click)="clearFilters()">Clear all filters</button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ─── Footer: count + pagination ──── -->
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-4 border-t border-base-300 bg-base-300/20">
+    <p class="text-xs text-base-content/40 order-2 sm:order-1">
+      @if (total() > 0) {
+        Showing {{ rangeStart() }}–{{ rangeEnd() }} of {{ total() }} entries
+      } @else {
+        No entries to show
+      }
+    </p>
+
+    @if (totalPages() > 1) {
+      <div class="join order-1 sm:order-2">
+        <button class="join-item btn btn-sm btn-ghost" [disabled]="currentPage() === 1" (click)="setPage(1)" aria-label="First page">«</button>
+        <button class="join-item btn btn-sm btn-ghost" [disabled]="currentPage() === 1" (click)="setPage(currentPage() - 1)" aria-label="Previous page">‹</button>
+        @for (p of pages(); track p) {
+          <button
+            class="join-item btn btn-sm"
+            [class.btn-primary]="currentPage() === p"
+            [class.btn-ghost]="currentPage() !== p"
+            (click)="setPage(p)"
+            [attr.aria-current]="currentPage() === p ? 'page' : null"
+          >{{ p }}</button>
+        }
+        <button class="join-item btn btn-sm btn-ghost" [disabled]="currentPage() === totalPages()" (click)="setPage(currentPage() + 1)" aria-label="Next page">›</button>
+        <button class="join-item btn btn-sm btn-ghost" [disabled]="currentPage() === totalPages()" (click)="setPage(totalPages())" aria-label="Last page">»</button>
+      </div>
+    }
+  </div>
+</div>

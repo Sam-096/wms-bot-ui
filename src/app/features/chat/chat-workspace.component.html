@@ -124,13 +124,13 @@
 
       <!-- Language tabs -->
       <div class="flex gap-0.5 bg-base-300 rounded-lg p-0.5 shrink-0">
-        @for (l of [['en','EN'],['te','తె'],['hi','हि'],['ta','த']] ; track l[0]) {
+        @for (l of [['en','EN'],['te','తె'],['hi','हि'],['ta','த'],['ne','ने']] ; track l[0]) {
           <button
             class="px-2 py-1 rounded-md text-xs font-medium transition-colors"
             [class.bg-base-100]="language === l[0]"
             [class.text-primary]="language === l[0]"
             [class.text-base-content/50]="language !== l[0]"
-            (click)="language = $any(l[0])"
+            (click)="setLanguage($any(l[0]))"
           >{{ l[1] }}</button>
         }
       </div>
@@ -165,6 +165,7 @@
                 @case ('te') { నమస్కారం! నేను WMS Bot 🤖 }
                 @case ('hi') { नमस्ते! मैं WMS Bot हूँ 🤖 }
                 @case ('ta') { வணக்கம்! நான் WMS Bot 🤖 }
+                @case ('ne') { नमस्ते! म WMS Bot हुँ 🤖 }
                 @default     { Hello! I'm WMS Bot 🤖 }
               }
             </h3>
@@ -203,20 +204,43 @@
             </div>
             <div class="flex flex-col gap-1 max-w-[75%]">
               <div class="relative group">
-                <div class="bg-base-200 border border-base-300 text-base-content px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed break-words shadow-sm">
-                  @if (msg.isLoading && !msg.text) {
-                    <div class="flex gap-1.5 items-center py-0.5 h-5">
-                      <span class="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style="animation-delay:0ms"></span>
-                      <span class="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style="animation-delay:150ms"></span>
-                      <span class="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+                @if (msg.kind === 'access-denied') {
+                  <div
+                    role="alert"
+                    class="flex gap-3 bg-warning/10 border border-warning/40 text-base-content px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed break-words shadow-sm"
+                  >
+                    <span class="text-warning text-lg leading-none shrink-0" aria-hidden="true">⚠</span>
+                    <div class="flex-1 flex flex-col gap-2">
+                      <p>{{ msg.text }}</p>
+                      @if (msg.actions?.length) {
+                        <div class="flex flex-wrap gap-1.5">
+                          @for (a of msg.actions; track a.route) {
+                            <button
+                              class="btn btn-xs btn-outline border-warning text-warning hover:bg-warning hover:text-warning-content"
+                              [attr.aria-label]="a.label"
+                              (click)="navigateTo(a.route)"
+                            >{{ a.label }}</button>
+                          }
+                        </div>
+                      }
                     </div>
-                  } @else {
-                    {{ msg.text }}
-                    @if (msg.isLoading) { <span class="text-primary animate-pulse ml-0.5">▋</span> }
-                  }
-                </div>
+                  </div>
+                } @else {
+                  <div class="bg-base-200 border border-base-300 text-base-content px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed break-words shadow-sm">
+                    @if (msg.isLoading && !msg.text) {
+                      <div class="flex gap-1.5 items-center py-0.5 h-5">
+                        <span class="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+                        <span class="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+                        <span class="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+                      </div>
+                    } @else {
+                      {{ msg.text }}
+                      @if (msg.isLoading) { <span class="text-primary animate-pulse ml-0.5">▋</span> }
+                    }
+                  </div>
+                }
                 <!-- Copy on hover -->
-                @if (!msg.isLoading && msg.text) {
+                @if (!msg.isLoading && msg.text && msg.kind !== 'access-denied') {
                   <button
                     class="absolute -top-2 -right-2 btn btn-circle btn-xs bg-base-100 border border-base-300 shadow opacity-0 group-hover:opacity-100 transition-opacity"
                     (click)="copyMessage(msg)" aria-label="Copy">
@@ -231,7 +255,7 @@
                 <span class="text-[10px] text-base-content/30">{{ msg.timestamp | date:'h:mm a' }}</span>
 
                 <!-- Reactions -->
-                @if (!msg.isLoading && msg.text) {
+                @if (!msg.isLoading && msg.text && msg.kind !== 'access-denied') {
                   @if (msg.reactionDone) {
                     <span class="text-[10px] text-success">Thanks 🙏</span>
                   } @else if (msg.reaction == null) {
