@@ -143,10 +143,10 @@
         aria-label="Filter by status"
       >
         <option value="">All Status</option>
-        <option value="Approved">Approved</option>
-        <option value="Pending">Pending</option>
-        <option value="Processing">Processing</option>
-        <option value="Rejected">Rejected</option>
+        <option value="APPROVED">Approved</option>
+        <option value="PENDING">Pending</option>
+        <option value="PROCESSING">Processing</option>
+        <option value="REJECTED">Rejected</option>
       </select>
 
       <!-- Date -->
@@ -243,10 +243,10 @@
           <th class="w-4 pl-5">
             <input type="checkbox" class="checkbox checkbox-xs" aria-label="Select all" />
           </th>
-          <th class="pl-2">Entry ID</th>
+          <th class="pl-2">GRN No.</th>
           <th>Date</th>
           <th>Vehicle No.</th>
-          <th>Driver</th>
+          <th>Supplier</th>
           <th>Commodity</th>
           <th class="text-right">Bags</th>
           <th class="text-right">Weight</th>
@@ -288,35 +288,32 @@
               <span class="font-mono text-xs font-medium text-primary">{{ entry.grnNumber }}</span>
             </td>
             <td>
-              <span class="text-sm text-base-content/70">{{ entry.date }}</span>
+              <span class="text-sm text-base-content/70">{{ entry.inwardDate }}</span>
             </td>
             <td>
               <span class="font-semibold text-sm tracking-wide text-base-content">{{
-                entry.vehicleNo
+                entry.vehicleNumber || '—'
               }}</span>
             </td>
             <td>
-              <div class="flex items-center gap-2">
-                <div class="avatar placeholder">
-                  <!-- <div class="bg-neutral text-neutral-content rounded-full w-6 h-6 text-xs">
-                    <span>{{ entry.driverName[0] }}</span>
-                  </div> -->
-                </div>
-                <span class="text-sm text-base-content">{{ entry.driverName }}</span>
-              </div>
+              <span class="text-sm text-base-content">{{ entry.supplierName }}</span>
             </td>
             <td>
-              <span class="badge badge-ghost badge-sm font-medium">{{ entry.commodity }}</span>
+              <span class="badge badge-ghost badge-sm font-medium">{{ entry.commodityName }}</span>
             </td>
             <td class="text-right">
               <span class="text-sm tabular-nums font-medium text-base-content">{{
-                entry.bags
+                entry.quantityBags ?? '—'
               }}</span>
             </td>
             <td class="text-right">
-              <span class="text-sm tabular-nums text-base-content/70"
-                >{{ entry.totalWeight | number }} kg</span
-              >
+              <span class="text-sm tabular-nums text-base-content/70">
+                @if (entry.totalWeight !== null) {
+                  {{ entry.totalWeight | number }} kg
+                } @else {
+                  —
+                }
+              </span>
             </td>
             <td>
               <span class="badge badge-sm font-medium" [class]="statusBadge(entry.status)">

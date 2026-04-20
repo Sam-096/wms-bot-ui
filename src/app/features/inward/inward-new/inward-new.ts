@@ -84,10 +84,10 @@ export class InwardNew {
 
     const request: CreateInwardRequest = {
       commodityName: this.commodity,
-      bags:          this.bags!,
-      unitWeight:    this.weight!,
       supplierName:  this.driverName,
-      vehicleNo:     this.vehicleNo,
+      vehicleNumber: this.vehicleNo,
+      quantityBags:  this.bags!,
+      unitWeight:    this.weight!,
       grnNumber:     `GRN-${Date.now()}`,
       remarks:       this.remarks || undefined,
       warehouseId,

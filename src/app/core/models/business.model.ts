@@ -1,4 +1,4 @@
-export type TransactionStatus = 'Pending' | 'Approved' | 'Rejected' | 'Processing';
+export type TransactionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'PROCESSING';
 
 export interface PagedResponse<T> {
   content: T[];
@@ -10,20 +10,22 @@ export interface PagedResponse<T> {
 
 export interface InwardTransaction {
   id: string;
-  grnNumber: string;
-  date: string;
-  vehicleNo: string;
-  driverName: string;
-  commodity: string;
-  bags: number;
-  unitWeight: number;
-  totalWeight: number;
-  supplierName: string;
   warehouseId: string;
+  grnNumber: string;
+  commodityName: string;
+  supplierName: string;
+  vehicleNumber: string | null;
+  quantityBags: number | null;
+  unitWeight: number | null;
+  totalWeight: number | null;
+  unit: string;
   status: TransactionStatus;
-  remarks?: string;
+  remarks: string | null;
+  inwardDate: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 export interface InwardFilters {
@@ -37,37 +39,42 @@ export interface InwardFilters {
 
 export interface CreateInwardRequest {
   commodityName: string;
-  bags: number;
-  unitWeight: number;
   supplierName: string;
-  vehicleNo: string;
+  vehicleNumber: string;
+  quantityBags: number;
+  unitWeight: number;
   grnNumber: string;
+  unit?: string;
   remarks?: string;
   warehouseId: string;
 }
 
 export interface OutwardTransaction {
   id: string;
-  outwardNumber: string;
-  date: string;
-  vehicleNo: string;
-  driverName: string;
-  commodity: string;
-  bags: number;
-  destination: string;
-  purpose: string;
   warehouseId: string;
+  dispatchNumber: string;
+  commodityName: string;
+  customerName: string;
+  vehicleNumber: string | null;
+  quantityBags: number | null;
+  unitWeight: number | null;
+  totalWeight: number | null;
+  unit: string;
   status: TransactionStatus;
-  remarks?: string;
+  remarks: string | null;
+  outwardDate: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateOutwardRequest {
-  commodity: string;
-  bags: number;
-  destination: string;
-  vehicleNo: string;
-  purpose: string;
+  commodityName: string;
+  customerName: string;
+  vehicleNumber: string;
+  quantityBags: number;
+  unit?: string;
   remarks?: string;
   warehouseId: string;
 }

@@ -111,9 +111,9 @@ export class OutwardList implements OnInit {
     const size1 = { page: 0, size: 1 };
     forkJoin({
       total:    this.outwardSvc.getAll({ ...size1 }),
-      pending:  this.outwardSvc.getAll({ ...size1, status: 'Pending' }),
-      approved: this.outwardSvc.getAll({ ...size1, status: 'Approved' }),
-      rejected: this.outwardSvc.getAll({ ...size1, status: 'Rejected' }),
+      pending:  this.outwardSvc.getAll({ ...size1, status: 'PENDING' }),
+      approved: this.outwardSvc.getAll({ ...size1, status: 'APPROVED' }),
+      rejected: this.outwardSvc.getAll({ ...size1, status: 'REJECTED' }),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((r) => this.stats.set({
@@ -165,12 +165,12 @@ export class OutwardList implements OnInit {
 
   statusBadge(status: TransactionStatus): string {
     const map: Record<TransactionStatus, string> = {
-      Approved:   'badge-success',
-      Pending:    'badge-warning',
-      Rejected:   'badge-error',
-      Processing: 'badge-info',
+      APPROVED:   'badge-success',
+      PENDING:    'badge-warning',
+      REJECTED:   'badge-error',
+      PROCESSING: 'badge-info',
     };
-    return map[status];
+    return map[status] ?? 'badge-ghost';
   }
 
   trackById = (_: number, e: OutwardTransaction): string => e.id;

@@ -84,12 +84,11 @@ export class OutwardNew {
     }
 
     const request: CreateOutwardRequest = {
-      commodity:   this.commodity,
-      bags:        this.bags!,
-      destination: this.destination.trim(),
-      vehicleNo:   this.vehicleNo,
-      purpose:     this.purpose,
-      remarks:     this.remarks || undefined,
+      commodityName: this.commodity,
+      customerName:  this.destination.trim(),
+      vehicleNumber: this.vehicleNo,
+      quantityBags:  this.bags!,
+      remarks:       this.remarks || undefined,
       warehouseId,
     };
 
