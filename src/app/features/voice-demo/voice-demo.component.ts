@@ -19,6 +19,7 @@ import {
   sanitizeStreamText,
 } from '../../core/services/chat-workspace.service';
 import { VoiceInputService } from '../../core/services/voice-input.service';
+import { UserContextService } from '../../core/services/user-context.service';
 import { Language } from '../../core/models/chat-message.model';
 
 declare const gsap: any;
@@ -303,8 +304,11 @@ export class VoiceDemoComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly voiceSvc   = inject(VoiceInputService);
   private readonly router     = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  // Single source of truth for warehouse context — shared across all components.
+  readonly userCtx = inject(UserContextService);
 
   // ── Core state ───────────────────────────────────────────────
+  readonly mode          = signal<'live' | 'upload'>('live');
   readonly language      = signal<Language>('te');
   readonly status        = signal<DemoStatus>('idle');
   readonly voiceDuration = signal(0);
@@ -382,6 +386,15 @@ export class VoiceDemoComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Lifecycle ────────────────────────────────────────────────
   ngOnInit(): void {
+    // Fetch the full warehouse list so the selector is populated and
+    // multi-warehouse users can switch context.  The active warehouse
+    // is already seeded from the auth profile in the service constructor.
+    this.userCtx.loadWarehouses()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+
+    // If browser speech recognition ends silently (timeout / no-speech),
+    // state$ goes idle while we still show 'listening' — snap back.
     this.voiceSvc.state$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((vState) => {
@@ -424,8 +437,17 @@ export class VoiceDemoComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ── Controls ─────────────────────────────────────────────────
+  setMode(m: 'live' | 'upload'): void {
+    if (m === 'upload') return;   // upload not yet supported
+    this.mode.set(m);
+  }
+
   setLanguage(val: string): void {
     this.language.set(val as Language);
+  }
+
+  setWarehouse(id: string): void {
+    this.userCtx.setActiveById(id);
   }
 
   toggleVoice(): void {
@@ -486,12 +508,22 @@ export class VoiceDemoComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private sendToAI(text: string): void {
+    const warehouseId   = this.userCtx.warehouseId();
+    const warehouseName = this.userCtx.warehouseName();
+
+    if (!this.userCtx.hasWarehouse()) {
+      console.warn('[demo] warehouseId missing or UNKNOWN — AI context degraded', { warehouseId });
+    }
+
     this.status.set('streaming');
     this.aiResponse.set('');
     this.streamAbortCtrl = new AbortController();
 
     this.streamSubscription = this.chatSvc
-      .sendMessage(text, this.language(), this.demoSessionId, this.streamAbortCtrl.signal)
+      .sendMessage(text, this.language(), this.demoSessionId, this.streamAbortCtrl.signal, {
+        warehouseId,
+        warehouseName,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:     (evt) => { this.aiResponse.update((r) => r + evt.text); },

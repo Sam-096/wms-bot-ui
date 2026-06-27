@@ -19,15 +19,36 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+
+        <!-- Warehouse context — shows which warehouse the AI answers for -->
+        <div class="demo-wh-ctx" [class.demo-wh-ctx--missing]="!userCtx.hasWarehouse()"
+          [attr.title]="userCtx.hasWarehouse() ? ('Warehouse: ' + userCtx.warehouseId()) : 'No warehouse assigned'">
+          <svg class="demo-wh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+              d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/>
+          </svg>
+          @if (userCtx.isMultiWarehouse()) {
+            <select class="demo-wh-select"
+              (change)="setWarehouse($any($event.target).value)"
+              aria-label="Select warehouse">
+              @for (w of userCtx.warehouses(); track w.id) {
+                <option [value]="w.id" [selected]="w.id === userCtx.warehouseId()">{{ w.name }}</option>
+              }
+            </select>
+          } @else {
+            <span class="demo-wh-name">
+              {{ userCtx.warehouseName() || 'No warehouse' }}
+            </span>
+          }
+        </div>
+
         <select
           class="select select-sm select-bordered text-xs"
           (change)="setLanguage($any($event.target).value)"
           aria-label="Select language">
           @for (l of langs; track l.code) {
-            <option [value]="l.code" [selected]="l.code === language()">
-              {{ l.native }}
-            </option>
+            <option [value]="l.code" [selected]="l.code === language()">{{ l.native }}</option>
           }
         </select>
 
@@ -48,20 +69,56 @@
   <main class="demo-main" role="main">
     <div class="demo-content">
 
-      <!-- ── Welcome ── -->
+      <!-- ── Welcome (compact) ── -->
       <div class="demo-gsap-welcome demo-welcome">
         <span class="demo-lang-pill">{{ selectedLang().native }}</span>
         <h1 class="demo-title">{{ uiStrings().title }}</h1>
         <p class="demo-subtitle">{{ uiStrings().subtitle }}</p>
       </div>
 
-      <!-- ── Interaction card ── -->
-      <div class="demo-gsap-card demo-int-card card bg-base-200 border border-base-300 shadow-lg">
-        <div class="demo-card-body">
+      <!-- ── Interaction card — vertical, mic-centred ── -->
+      <div class="demo-gsap-card demo-int-card card bg-base-200 border border-base-300">
+        <div class="demo-card-body-v">
 
-          <!-- LEFT: mic -->
-          <div class="demo-gsap-mic demo-mic-wrap"
-            [class.demo-mic-wrap--listening]="status() === 'listening'">
+          <!-- Warehouse warning — shown when context is missing -->
+          @if (!userCtx.hasWarehouse()) {
+            <div role="alert" class="alert alert-warning text-xs py-2 px-3 w-full">
+              <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+              </svg>
+              <span>Warehouse context not loaded — queries may return generic answers</span>
+            </div>
+          }
+
+          <!-- Mode toggle -->
+          <div class="flex gap-0.5 bg-base-300 rounded-lg p-0.5" role="tablist" aria-label="Input mode">
+            <button role="tab"
+              class="px-4 py-1.5 rounded-md text-xs font-semibold transition-colors"
+              [class.bg-base-100]="mode() === 'live'"
+              [class.text-primary]="mode() === 'live'"
+              [class.text-base-content/50]="mode() !== 'live'"
+              (click)="setMode('live')" aria-label="Speak live">
+              <span class="flex items-center gap-1.5">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Speak Live
+              </span>
+            </button>
+            <button role="tab"
+              class="px-4 py-1.5 rounded-md text-xs font-semibold text-base-content/30 cursor-not-allowed"
+              disabled aria-disabled="true" aria-selected="false">
+              Upload
+            </button>
+          </div>
+
+          <!-- ── Mic aura + button (the primary focal point) ── -->
+          <div
+            class="demo-gsap-mic demo-mic-aura"
+            [class.demo-mic-aura--listening]="status() === 'listening'"
+            [class.demo-mic-aura--busy]="isBusy()">
             <button
               class="demo-mic-btn"
               [class.demo-mic--ready]="status() === 'idle' || status() === 'done' || status() === 'error'"
@@ -69,7 +126,9 @@
               [class.demo-mic--busy]="isBusy()"
               [disabled]="isBusy()"
               (click)="toggleVoice()"
-              [attr.aria-label]="status() === 'listening' ? uiStrings().statusLabels.listening : uiStrings().micReady">
+              [attr.aria-label]="status() === 'listening'
+                ? uiStrings().statusLabels.listening
+                : uiStrings().micReady">
               @if (isBusy()) {
                 <span class="loading loading-spinner loading-md text-primary-content"></span>
               } @else if (status() === 'listening') {
@@ -85,39 +144,37 @@
             </button>
           </div>
 
-          <!-- RIGHT: status + hint + prompts -->
-          <div class="demo-card-info">
-
-            <!-- Status row -->
-            <div class="flex items-center gap-3 flex-wrap">
-              <div class="demo-status-pill"
-                [class.demo-status--idle]="status() === 'idle'"
-                [class.demo-status--listening]="status() === 'listening'"
-                [class.demo-status--processing]="status() === 'transcribing' || status() === 'streaming'"
-                [class.demo-status--done]="status() === 'done'"
-                [class.demo-status--error]="status() === 'error'"
-                role="status"
-                [attr.aria-label]="uiStrings().statusLabels[status()]">
-                <span class="demo-status-dot"
-                  [class.animate-pulse]="status() === 'listening' || status() === 'streaming'">
-                </span>
-                {{ uiStrings().statusLabels[status()] }}
-              </div>
-              @if (status() === 'listening') {
-                <span class="font-mono text-sm tabular-nums text-error font-bold">
-                  {{ formatDuration(voiceDuration()) }}
-                </span>
-              }
+          <!-- Status + timer (below mic) -->
+          <div class="flex items-center justify-center gap-3 flex-wrap">
+            <div class="demo-status-pill"
+              [class.demo-status--idle]="status() === 'idle'"
+              [class.demo-status--listening]="status() === 'listening'"
+              [class.demo-status--processing]="status() === 'transcribing' || status() === 'streaming'"
+              [class.demo-status--done]="status() === 'done'"
+              [class.demo-status--error]="status() === 'error'"
+              role="status"
+              [attr.aria-label]="uiStrings().statusLabels[status()]">
+              <span class="demo-status-dot"
+                [class.animate-pulse]="status() === 'listening' || status() === 'streaming'">
+              </span>
+              {{ uiStrings().statusLabels[status()] }}
             </div>
-
-            <!-- Hint or localised error -->
-            @if (status() === 'error' && errorMsg()) {
-              <p class="demo-error-inline">{{ errorMsg() }}</p>
-            } @else {
-              <p class="demo-hint">{{ micHint() }}</p>
+            @if (status() === 'listening') {
+              <span class="font-mono text-sm tabular-nums text-error font-bold">
+                {{ formatDuration(voiceDuration()) }}
+              </span>
             }
+          </div>
 
-            <!-- Localised quick prompts -->
+          <!-- Hint text or localised error -->
+          @if (status() === 'error' && errorMsg()) {
+            <p class="demo-error-inline text-center">{{ errorMsg() }}</p>
+          } @else {
+            <p class="demo-hint text-center">{{ micHint() }}</p>
+          }
+
+          <!-- Prompts section -->
+          <div class="demo-prompts-area">
             <div class="demo-prompts-row" role="group" [attr.aria-label]="uiStrings().promptsLabel">
               <span class="demo-prompts-label">{{ uiStrings().promptsLabel }}</span>
               @for (p of quickPrompts(); track p.label) {
@@ -130,15 +187,15 @@
                 </button>
               }
             </div>
-
           </div>
+
         </div>
       </div>
 
       <!-- ── Output panels ── -->
       <div class="demo-output-grid">
 
-        <!-- Your words (transcript) -->
+        <!-- Your words -->
         <div class="demo-gsap-transcript demo-output-card demo-output-card--words card bg-base-200 border border-base-300"
           aria-labelledby="demo-lbl-transcript">
           <div class="demo-output-body">
@@ -147,9 +204,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                   d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
               </svg>
-              <h3 class="demo-output-label" id="demo-lbl-transcript">
-                {{ uiStrings().transcriptLabel }}
-              </h3>
+              <h3 class="demo-output-label" id="demo-lbl-transcript">{{ uiStrings().transcriptLabel }}</h3>
               @if (transcriptWordCount()) {
                 <span class="demo-word-count ml-auto">{{ transcriptWordCount() }}</span>
               }
@@ -179,9 +234,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                   d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
               </svg>
-              <h3 class="demo-output-label" id="demo-lbl-reply">
-                {{ uiStrings().replyLabel }}
-              </h3>
+              <h3 class="demo-output-label" id="demo-lbl-reply">{{ uiStrings().replyLabel }}</h3>
               @if (responseWordCount()) {
                 <span class="demo-word-count ml-auto">{{ responseWordCount() }}</span>
               }
