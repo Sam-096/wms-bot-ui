@@ -1,0 +1,219 @@
+<div class="demo-page">
+
+  <!-- ══════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════ -->
+  <header class="demo-gsap-header demo-header">
+    <div class="demo-header-inner">
+
+      <div class="demo-brand">
+        <div class="demo-brand-icon">
+          <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7.5L11.608 3.221a.97.97 0 01.784 0L20 7.5M4 7.5v8.532c0 .17 0 .255.025.332a.6.6 0 00.131.172c.054.059.128.101.277.185L12 21m-8-13.5L12 11.5M12 21l7.592-4.281c.149-.084.223-.126.277-.185a.6.6 0 00.131-.172c.025-.077.025-.162.025-.332V7.5M12 21V11.5M20 7.5L12 11.5"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="demo-brand-text">
+          <span class="demo-brand-name">Godown AI</span>
+          <span class="demo-brand-sub">AI Demo</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <select
+          class="select select-sm select-bordered text-xs"
+          (change)="setLanguage($any($event.target).value)"
+          aria-label="Select language">
+          @for (l of langs; track l.code) {
+            <option [value]="l.code" [selected]="l.code === language()">
+              {{ l.native }}
+            </option>
+          }
+        </select>
+
+        <button class="btn btn-ghost btn-sm gap-1.5" (click)="navigateBack()" aria-label="Back to home">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+          </svg>
+          Home
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       MAIN
+  ══════════════════════════════════════════ -->
+  <main class="demo-main" role="main">
+    <div class="demo-content">
+
+      <!-- ── Welcome ── -->
+      <div class="demo-gsap-welcome demo-welcome">
+        <span class="demo-lang-pill">{{ selectedLang().native }}</span>
+        <h1 class="demo-title">{{ uiStrings().title }}</h1>
+        <p class="demo-subtitle">{{ uiStrings().subtitle }}</p>
+      </div>
+
+      <!-- ── Interaction card ── -->
+      <div class="demo-gsap-card demo-int-card card bg-base-200 border border-base-300 shadow-lg">
+        <div class="demo-card-body">
+
+          <!-- LEFT: mic -->
+          <div class="demo-gsap-mic demo-mic-wrap"
+            [class.demo-mic-wrap--listening]="status() === 'listening'">
+            <button
+              class="demo-mic-btn"
+              [class.demo-mic--ready]="status() === 'idle' || status() === 'done' || status() === 'error'"
+              [class.demo-mic--listening]="status() === 'listening'"
+              [class.demo-mic--busy]="isBusy()"
+              [disabled]="isBusy()"
+              (click)="toggleVoice()"
+              [attr.aria-label]="status() === 'listening' ? uiStrings().statusLabels.listening : uiStrings().micReady">
+              @if (isBusy()) {
+                <span class="loading loading-spinner loading-md text-primary-content"></span>
+              } @else if (status() === 'listening') {
+                <svg class="demo-mic-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="7" y="7" width="10" height="10" rx="2"/>
+                </svg>
+              } @else {
+                <svg class="demo-mic-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              }
+            </button>
+          </div>
+
+          <!-- RIGHT: status + hint + prompts -->
+          <div class="demo-card-info">
+
+            <!-- Status row -->
+            <div class="flex items-center gap-3 flex-wrap">
+              <div class="demo-status-pill"
+                [class.demo-status--idle]="status() === 'idle'"
+                [class.demo-status--listening]="status() === 'listening'"
+                [class.demo-status--processing]="status() === 'transcribing' || status() === 'streaming'"
+                [class.demo-status--done]="status() === 'done'"
+                [class.demo-status--error]="status() === 'error'"
+                role="status"
+                [attr.aria-label]="uiStrings().statusLabels[status()]">
+                <span class="demo-status-dot"
+                  [class.animate-pulse]="status() === 'listening' || status() === 'streaming'">
+                </span>
+                {{ uiStrings().statusLabels[status()] }}
+              </div>
+              @if (status() === 'listening') {
+                <span class="font-mono text-sm tabular-nums text-error font-bold">
+                  {{ formatDuration(voiceDuration()) }}
+                </span>
+              }
+            </div>
+
+            <!-- Hint or localised error -->
+            @if (status() === 'error' && errorMsg()) {
+              <p class="demo-error-inline">{{ errorMsg() }}</p>
+            } @else {
+              <p class="demo-hint">{{ micHint() }}</p>
+            }
+
+            <!-- Localised quick prompts -->
+            <div class="demo-prompts-row" role="group" [attr.aria-label]="uiStrings().promptsLabel">
+              <span class="demo-prompts-label">{{ uiStrings().promptsLabel }}</span>
+              @for (p of quickPrompts(); track p.label) {
+                <button
+                  class="demo-gsap-chip btn btn-xs btn-ghost border border-base-300 rounded-full
+                         hover:border-primary hover:text-primary transition-colors"
+                  [disabled]="isBusy() || status() === 'listening'"
+                  (click)="sendQuickPrompt(p.text)">
+                  {{ p.label }}
+                </button>
+              }
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Output panels ── -->
+      <div class="demo-output-grid">
+
+        <!-- Your words (transcript) -->
+        <div class="demo-gsap-transcript demo-output-card demo-output-card--words card bg-base-200 border border-base-300"
+          aria-labelledby="demo-lbl-transcript">
+          <div class="demo-output-body">
+            <div class="demo-output-header">
+              <svg class="demo-output-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                  d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
+              </svg>
+              <h3 class="demo-output-label" id="demo-lbl-transcript">
+                {{ uiStrings().transcriptLabel }}
+              </h3>
+              @if (transcriptWordCount()) {
+                <span class="demo-word-count ml-auto">{{ transcriptWordCount() }}</span>
+              }
+            </div>
+            <div class="demo-output-content" aria-live="polite">
+              @if (transcript()) {
+                <p class="demo-output-text">{{ transcript() }}</p>
+              } @else {
+                <div class="demo-empty">
+                  <svg class="demo-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25"
+                      d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
+                  </svg>
+                  <span>{{ uiStrings().transcriptEmpty }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Assistant reply -->
+        <div class="demo-gsap-response demo-output-card demo-output-card--reply card bg-base-200 border border-base-300"
+          aria-labelledby="demo-lbl-reply">
+          <div class="demo-output-body">
+            <div class="demo-output-header">
+              <svg class="demo-output-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+              </svg>
+              <h3 class="demo-output-label" id="demo-lbl-reply">
+                {{ uiStrings().replyLabel }}
+              </h3>
+              @if (responseWordCount()) {
+                <span class="demo-word-count ml-auto">{{ responseWordCount() }}</span>
+              }
+            </div>
+            <div class="demo-output-content" aria-live="polite">
+              @if (status() === 'streaming' && !aiResponse()) {
+                <div class="demo-loading-dots" aria-label="{{ uiStrings().statusLabels.streaming }}">
+                  <span></span><span></span><span></span>
+                </div>
+              } @else if (aiResponse()) {
+                <p class="demo-output-text">
+                  {{ aiResponse() }}
+                  @if (status() === 'streaming') {
+                    <span class="demo-cursor text-primary font-bold" aria-hidden="true">▋</span>
+                  }
+                </p>
+              } @else {
+                <div class="demo-empty">
+                  <svg class="demo-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25"
+                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+                  </svg>
+                  <span>{{ uiStrings().replyEmpty }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>

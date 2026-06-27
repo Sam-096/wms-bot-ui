@@ -31,6 +31,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/unauthorized/unauthorized.component').then((m) => m.UnauthorizedComponent),
   },
+  {
+    path: 'demo',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/voice-demo/voice-demo.component').then((m) => m.VoiceDemoComponent),
+  },
 
   // ── Authenticated shell ────────────────────────────────────
   {

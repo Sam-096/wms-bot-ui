@@ -57,6 +57,12 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 
+  goToDemo(): void {
+    // Route through login so the authenticated APIs work in /demo.
+    // The login component already reads ?returnUrl and navigates there on success.
+    this.router.navigate(['/login'], { queryParams: { returnUrl: '/demo' } });
+  }
+
   private initGsap(): void {
     if (typeof gsap === 'undefined') return;
     try {

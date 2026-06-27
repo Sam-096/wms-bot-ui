@@ -1,0 +1,528 @@
+/* ════════════════════════════════════════════════════════════
+   Voice Demo — single-screen layout, fully theme-token driven.
+   The page is locked to 100dvh with no body scroll.
+   Custom classes cover only what Tailwind can't express cleanly:
+   fixed layout, mic circle + rings, card accents, status pill
+   colours, output panel structure, empty states, GSAP hints.
+════════════════════════════════════════════════════════════ */
+
+/* ── Viewport lock ──────────────────────────────────────── */
+:host {
+  display: block;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-base-100);
+}
+
+.demo-page {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  /* Subtle ambient glow that adapts to primary theme colour */
+  background:
+    radial-gradient(
+      ellipse 60% 40% at 20% 0%,
+      color-mix(in oklch, var(--color-primary) 6%, transparent) 0%,
+      transparent 70%
+    ),
+    var(--color-base-100);
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.demo-header {
+  flex-shrink: 0;
+  background: color-mix(in oklch, var(--color-base-100) 86%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--color-base-300);
+  padding: 9px 24px;
+  z-index: 20;
+}
+
+.demo-header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.demo-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.demo-brand-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: color-mix(in oklch, var(--color-primary) 12%, transparent);
+  border: 1px solid color-mix(in oklch, var(--color-primary) 22%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.demo-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.1;
+}
+
+.demo-brand-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-base-content);
+  letter-spacing: -0.2px;
+}
+
+.demo-brand-sub {
+  font-size: 9px;
+  font-weight: 600;
+  color: color-mix(in oklch, var(--color-base-content) 35%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+
+/* ── Main / content ─────────────────────────────────────── */
+.demo-main {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 24px;
+}
+
+.demo-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 0;
+  max-width: 900px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+/* ── Welcome ─────────────────────────────────────────────── */
+.demo-welcome {
+  flex-shrink: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Language pill — a micro label that changes with language */
+.demo-lang-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: color-mix(in oklch, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+  border: 1px solid color-mix(in oklch, var(--color-primary) 22%, transparent);
+  margin-bottom: 2px;
+  transition: all 0.25s ease;
+}
+
+.demo-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--color-base-content);
+  line-height: 1.2;
+}
+
+.demo-subtitle {
+  font-size: 13px;
+  color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
+  line-height: 1.4;
+}
+
+/* ── Interaction card ────────────────────────────────────── */
+/* Thin primary-colour accent at the top gives the card authority */
+.demo-int-card {
+  flex-shrink: 0;
+  border-top: 2px solid var(--color-primary) !important;
+}
+
+.demo-card-body {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 20px;
+}
+
+/* ── Mic column (left) ───────────────────────────────────── */
+.demo-mic-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  overflow: visible;
+}
+
+/* Listening rings — expand outward from the button */
+.demo-mic-wrap--listening::before,
+.demo-mic-wrap--listening::after {
+  content: '';
+  position: absolute;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in oklch, var(--color-error) 40%, transparent);
+  pointer-events: none;
+  animation: demo-ring 1.7s ease-out infinite;
+}
+.demo-mic-wrap--listening::before { inset: 4px; }
+.demo-mic-wrap--listening::after  {
+  inset: -10px;
+  border-color: color-mix(in oklch, var(--color-error) 20%, transparent);
+  animation-delay: 0.3s;
+}
+
+@keyframes demo-ring {
+  0%   { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+.demo-mic-btn {
+  position: relative;
+  z-index: 1;
+  width: 88px;
+  height: 88px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition:
+    transform  0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.2s ease;
+}
+
+.demo-mic-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.demo-mic--ready {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  box-shadow:
+    0 4px 18px color-mix(in oklch, var(--color-primary) 36%, transparent),
+    0 1px 4px rgba(0,0,0,0.08);
+}
+.demo-mic--ready:hover {
+  transform: scale(1.07);
+  box-shadow:
+    0 8px 26px color-mix(in oklch, var(--color-primary) 48%, transparent),
+    0 2px 8px rgba(0,0,0,0.1);
+}
+
+.demo-mic--listening {
+  background: var(--color-error);
+  color: var(--color-error-content);
+  box-shadow:
+    0 4px 18px color-mix(in oklch, var(--color-error) 40%, transparent),
+    0 1px 4px rgba(0,0,0,0.08);
+  animation: demo-mic-breathe 1.5s ease-in-out infinite;
+}
+
+.demo-mic--busy {
+  background: var(--color-base-300);
+  color: color-mix(in oklch, var(--color-base-content) 40%, transparent);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+@keyframes demo-mic-breathe {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.045); }
+}
+
+.demo-mic-icon { width: 30px; height: 30px; }
+
+/* ── Info column (right) ─────────────────────────────────── */
+.demo-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Status pill */
+.demo-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  border: 1px solid transparent;
+  width: fit-content;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.demo-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.demo-status--idle {
+  background: color-mix(in oklch, var(--color-base-content) 6%, transparent);
+  color: color-mix(in oklch, var(--color-base-content) 45%, transparent);
+  border-color: var(--color-base-300);
+}
+.demo-status--idle .demo-status-dot {
+  background: color-mix(in oklch, var(--color-base-content) 30%, transparent);
+}
+
+.demo-status--listening {
+  background: color-mix(in oklch, var(--color-error) 10%, transparent);
+  color: var(--color-error);
+  border-color: color-mix(in oklch, var(--color-error) 30%, transparent);
+}
+.demo-status--listening .demo-status-dot { background: var(--color-error); }
+
+.demo-status--processing {
+  background: color-mix(in oklch, var(--color-info) 10%, transparent);
+  color: var(--color-info);
+  border-color: color-mix(in oklch, var(--color-info) 30%, transparent);
+}
+.demo-status--processing .demo-status-dot { background: var(--color-info); }
+
+.demo-status--done {
+  background: color-mix(in oklch, var(--color-success) 10%, transparent);
+  color: var(--color-success);
+  border-color: color-mix(in oklch, var(--color-success) 30%, transparent);
+}
+.demo-status--done .demo-status-dot { background: var(--color-success); }
+
+.demo-status--error {
+  background: color-mix(in oklch, var(--color-warning) 10%, transparent);
+  color: var(--color-warning);
+  border-color: color-mix(in oklch, var(--color-warning) 30%, transparent);
+}
+.demo-status--error .demo-status-dot { background: var(--color-warning); }
+
+/* Hint / inline error */
+.demo-hint {
+  font-size: 13.5px;
+  color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+  line-height: 1.45;
+}
+
+.demo-error-inline {
+  font-size: 12px;
+  color: var(--color-warning);
+  line-height: 1.45;
+}
+
+/* Quick prompts */
+.demo-prompts-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.demo-prompts-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: color-mix(in oklch, var(--color-base-content) 35%, transparent);
+  flex-shrink: 0;
+}
+
+/* ── Output grid ─────────────────────────────────────────── */
+.demo-output-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Each card stretches to fill its grid cell */
+.demo-output-card {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Coloured left-border accent differentiates the two panels */
+.demo-output-card--words {
+  border-left: 2px solid var(--color-primary) !important;
+}
+
+.demo-output-card--reply {
+  border-left: 2px solid var(--color-secondary) !important;
+}
+
+/* Card inner body */
+.demo-output-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 15px 12px;
+  gap: 8px;
+  overflow: hidden;
+}
+
+/* Label row */
+.demo-output-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-base-300);
+}
+
+.demo-output-icon {
+  width: 13px;
+  height: 13px;
+  color: color-mix(in oklch, var(--color-base-content) 35%, transparent);
+  flex-shrink: 0;
+}
+
+.demo-output-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: color-mix(in oklch, var(--color-base-content) 40%, transparent);
+}
+
+.demo-word-count {
+  font-size: 10px;
+  color: color-mix(in oklch, var(--color-base-content) 30%, transparent);
+  background: color-mix(in oklch, var(--color-base-content) 6%, transparent);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* Scrollable text area — handles long IndIC text without overflow */
+.demo-output-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-base-300) transparent;
+}
+
+.demo-output-content::-webkit-scrollbar       { width: 3px; }
+.demo-output-content::-webkit-scrollbar-thumb { background: var(--color-base-300); border-radius: 2px; }
+
+.demo-output-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-base-content);
+}
+
+/* Empty state — centered, iconographic, soft */
+.demo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  text-align: center;
+  color: color-mix(in oklch, var(--color-base-content) 25%, transparent);
+  padding: 8px;
+}
+
+.demo-empty-icon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.5;
+}
+
+.demo-empty span {
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+  max-width: 180px;
+}
+
+/* Loading dots */
+.demo-loading-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.demo-loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: demo-bounce 1.2s ease-in-out infinite;
+}
+
+.demo-loading-dots span:nth-child(2) { animation-delay: 0.16s; }
+.demo-loading-dots span:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes demo-bounce {
+  0%, 80%, 100% { transform: translateY(0);    opacity: 0.4; }
+  40%           { transform: translateY(-5px); opacity: 1;   }
+}
+
+/* Streaming cursor */
+.demo-cursor {
+  display: inline-block;
+  animation: demo-blink 0.9s step-end infinite;
+  margin-left: 1px;
+}
+
+@keyframes demo-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── GSAP will-change hints ──────────────────────────────── */
+.demo-gsap-header,
+.demo-gsap-welcome,
+.demo-gsap-card,
+.demo-gsap-mic,
+.demo-gsap-chip,
+.demo-gsap-transcript,
+.demo-gsap-response {
+  will-change: transform, opacity;
+}
+
+/* ── Mobile — allow scroll, single column ────────────────── */
+@media (max-width: 640px) {
+  :host { height: auto; min-height: 100dvh; overflow: auto; }
+  .demo-page  { height: auto; min-height: 100dvh; }
+  .demo-main  { overflow: visible; }
+  .demo-content { height: auto; overflow: visible; padding: 14px 0 36px; }
+  .demo-card-body { flex-direction: column; align-items: center; gap: 16px; padding: 20px 16px; }
+  .demo-output-grid { grid-template-columns: 1fr; flex: none; min-height: 280px; }
+  .demo-output-card { min-height: 140px; }
+}

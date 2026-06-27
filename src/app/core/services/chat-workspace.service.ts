@@ -18,6 +18,11 @@ export type ChatStreamEvent =
 interface RawSseEvent {
   type: string;
   content?: string | null;
+  // Defensive aliases: some providers (e.g. Groq via OpenAI SDK) may emit
+  // the token text in 'delta' or 'text' instead of the canonical 'content'.
+  // The backend should normalise to 'content', but we accept both as a safety net.
+  delta?:   string | null;
+  text?:    string | null;
   data?: unknown;
   timestamp?: string;
 }
@@ -90,9 +95,14 @@ function fetchSSE(
               try { evt = JSON.parse(raw) as RawSseEvent; } catch { continue; }
 
               switch (evt.type) {
-                case 'TOKEN':
-                  if (evt.content) observer.next({ type: 'token', text: evt.content });
+                case 'TOKEN': {
+                  // Canonical field is 'content'. Accept 'delta' / 'text' as
+                  // fallbacks so Groq streaming works even if the backend
+                  // hasn't been normalised yet.
+                  const tokenText = evt.content ?? evt.delta ?? evt.text ?? '';
+                  if (tokenText) observer.next({ type: 'token', text: tokenText });
                   break;
+                }
                 case 'INSTANT':
                   observer.next({ type: 'token', text: evt.content ?? '' });
                   observer.complete();
