@@ -79,52 +79,81 @@ function fetchSSE(
 
         const reader  = res.body!.getReader();
         const decoder = new TextDecoder();
+        // Buffer accumulates raw bytes across read() calls so that events
+        // which straddle a network chunk boundary are never silently dropped.
+        // SSE uses \n\n as the event separator — we only parse complete blocks.
+        let sseBuffer = '';
+
+        const dispatchRaw = (raw: string): boolean => {
+          // Returns true when the stream should stop (terminal event received).
+          let evt: RawSseEvent;
+          try { evt = JSON.parse(raw) as RawSseEvent; } catch { return false; }
+
+          console.debug('[chat-sse]', evt.type, evt);
+
+          switch (evt.type) {
+            case 'TOKEN':
+            case 'TABLE': {
+              // 'content' is canonical. 'delta' / 'text' are fallbacks for
+              // providers that haven't normalised to the agreed contract yet.
+              const text = evt.content ?? evt.delta ?? evt.text ?? '';
+              if (text) observer.next({ type: 'token', text });
+              return false;
+            }
+            case 'INSTANT':
+              observer.next({ type: 'token', text: evt.content ?? '' });
+              observer.complete();
+              return true;
+            case 'ACCESS_DENIED':
+              observer.next({
+                type: 'access-denied',
+                text: evt.content ?? '',
+                actions: parseActions(evt.data),
+              });
+              observer.complete();
+              return true;
+            case 'DONE':
+              observer.complete();
+              return true;
+            case 'ERROR':
+              observer.error(new Error(evt.content ?? 'Stream error'));
+              return true;
+            default:
+              console.warn('[chat-sse] unknown event type:', evt.type, evt);
+              return false;
+          }
+        };
 
         const pump = (): Promise<void> =>
           reader.read().then(({ done, value }) => {
-            if (done) { observer.complete(); return; }
-
-            const lines = decoder.decode(value, { stream: true }).split('\n');
-
-            for (const line of lines) {
-              if (!line.startsWith('data:')) continue;
-              const raw = line.slice(5).trim();
-              if (!raw) continue;
-
-              let evt: RawSseEvent;
-              try { evt = JSON.parse(raw) as RawSseEvent; } catch { continue; }
-
-              switch (evt.type) {
-                case 'TOKEN': {
-                  // Canonical field is 'content'. Accept 'delta' / 'text' as
-                  // fallbacks so Groq streaming works even if the backend
-                  // hasn't been normalised yet.
-                  const tokenText = evt.content ?? evt.delta ?? evt.text ?? '';
-                  if (tokenText) observer.next({ type: 'token', text: tokenText });
-                  break;
+            if (done) {
+              // Flush anything left in the buffer (stream closed without \n\n).
+              if (sseBuffer.trim()) {
+                for (const line of sseBuffer.split('\n')) {
+                  if (!line.startsWith('data:')) continue;
+                  dispatchRaw(line.slice(5).trim());
                 }
-                case 'INSTANT':
-                  observer.next({ type: 'token', text: evt.content ?? '' });
-                  observer.complete();
-                  return;
-                case 'ACCESS_DENIED':
-                  observer.next({
-                    type: 'access-denied',
-                    text: evt.content ?? '',
-                    actions: parseActions(evt.data),
-                  });
-                  observer.complete();
-                  return;
-                case 'DONE':
-                  observer.complete();
-                  return;
-                case 'ERROR':
-                  observer.error(new Error(evt.content ?? 'Stream error'));
-                  return;
-                default:
-                  console.warn('[chat] unknown SSE type:', evt.type);
-                  break;
               }
+              observer.complete();
+              return;
+            }
+
+            sseBuffer += decoder.decode(value, { stream: true });
+
+            // Split on SSE event boundaries (\n\n).
+            // The last element may be an incomplete event — keep it in the buffer.
+            const parts = sseBuffer.split('\n\n');
+            sseBuffer = parts.pop() ?? '';
+
+            for (const part of parts) {
+              let shouldStop = false;
+              for (const line of part.split('\n')) {
+                if (!line.startsWith('data:')) continue;
+                const raw = line.slice(5).trim();
+                if (!raw) continue;
+                if (dispatchRaw(raw)) { shouldStop = true; break; }
+              }
+              if (shouldStop) return; // terminal event — stop reading
             }
 
             return pump();

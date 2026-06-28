@@ -549,7 +549,7 @@ export class VoiceDemoComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   navigateBack(): void {
-    void this.router.navigate(['/']);
+    void this.router.navigate(['']);
   }
 
   formatDuration(secs: number): string {
