@@ -27,11 +27,20 @@ interface RawSseEvent {
   timestamp?: string;
 }
 
-/** Strip leaked JSON envelopes and code fences from streamed text. Defense-in-depth. */
+/** Strip leaked JSON envelopes and code fences from streamed text. Defense-in-depth.
+ *
+ *  SAFETY: if the regex would blank a non-empty response (e.g. the backend sent a
+ *  ChatEvent DTO string as the content field), we preserve the original text so the
+ *  user sees something instead of nothing.
+ */
 const JSON_ENVELOPE = /\{\s*\\?"type\\?"\s*:[\s\S]*?\}\s*\]?\s*/g;
 const CODE_FENCE = /```[a-zA-Z]*\n?[\s\S]*?```\s*/g;
 export function sanitizeStreamText(raw: string): string {
-  return raw.replace(JSON_ENVELOPE, '').replace(CODE_FENCE, '').trim();
+  if (!raw) return raw;
+  const cleaned = raw.replace(JSON_ENVELOPE, '').replace(CODE_FENCE, '').trim();
+  // If sanitisation wiped out everything, return the original — better to show the
+  // raw text (possibly with a JSON envelope) than an empty assistant bubble.
+  return cleaned || raw.trim();
 }
 
 function parseActions(data: unknown): ChatMessageAction[] {
@@ -131,7 +140,11 @@ function fetchSSE(
               if (sseBuffer.trim()) {
                 for (const line of sseBuffer.split('\n')) {
                   if (!line.startsWith('data:')) continue;
-                  dispatchRaw(line.slice(5).trim());
+                  const raw = line.slice(5).trim();
+                  if (!raw) continue;
+                  // Stop flushing as soon as a terminal event is hit so we
+                  // don't call observer.complete() from two places in sequence.
+                  if (dispatchRaw(raw)) break;
                 }
               }
               observer.complete();

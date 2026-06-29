@@ -526,10 +526,21 @@ export class VoiceDemoComponent implements OnInit, AfterViewInit, OnDestroy {
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next:     (evt) => { this.aiResponse.update((r) => r + evt.text); },
-        error:    ()    => { this.status.set('error'); this.errorKey.set('generic'); },
-        complete: ()    => {
-          this.aiResponse.update((r) => sanitizeStreamText(r));
+        next: (evt) => {
+          console.debug('[demo-voice] next: text=', JSON.stringify(evt.text));
+          this.aiResponse.update((r) => r + evt.text);
+          console.debug('[demo-voice] next: aiResponse now=', JSON.stringify(this.aiResponse()));
+        },
+        error: () => {
+          console.debug('[demo-voice] error callback fired');
+          this.status.set('error');
+          this.errorKey.set('generic');
+        },
+        complete: () => {
+          const before = this.aiResponse();
+          const after  = sanitizeStreamText(before);
+          console.debug('[demo-voice] complete: before=', JSON.stringify(before), 'after=', JSON.stringify(after));
+          this.aiResponse.set(after);
           this.status.set('done');
         },
       });
